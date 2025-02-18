@@ -11,8 +11,8 @@ const double lengthY = 12.0;
 double hx = lengthX / (N + 2);
 double hy = lengthY / (N + 2);
 
-vector<vector<double>> x(N + 2, vector<double>(N + 3));
-vector<vector<double>> y(N + 2, vector<double>(N + 3));
+vector<vector<double>> x(N + 3, vector<double>(N + 3));
+vector<vector<double>> y(N + 3, vector<double>(N + 3));
 
 vector<vector<double>> xm(N + 2, vector<double>(N + 2));
 vector<vector<double>> ym(N + 2, vector<double>(N + 2));
@@ -20,11 +20,13 @@ vector<vector<double>> ym(N + 2, vector<double>(N + 2));
 vector<vector<double>> u(N + 2, vector<double>(N + 2));
 vector<vector<double>> v(N + 2, vector<double>(N + 2));
 
+vector<vector<double>> p(N + 2, vector<double>(N + 2));
+
 void createCoordinatesXY()
 {
-    for (int i = 0; i < N + 2; i++)
+    for (int i = 0; i < N + 3; i++)
     {
-        for (int j = 0; j < N + 2; j++)
+        for (int j = 0; j < N + 3; j++)
         {
             x[i][j] = i * hx;
             y[i][j] = j * hy;
@@ -47,11 +49,11 @@ int main()
 {
     createCoordinatesXY();
     createCoordinatesXYM();
-    // for (int i = 0; i < N + 2; i++)
+    // for (int i = 0; i < N + 3; i++)
     // {
-    //     for (int j = 0; j < N + 2; j++)
+    //     for (int j = 0; j < N + 3; j++)
     //     {
-    //         cout << xm[i][j] << "," << ym[i][j] << " ";
+    //         cout << x[i][j] << "," << y[i][j] << " ";
     //     }
     //     cout << endl;
     // }
