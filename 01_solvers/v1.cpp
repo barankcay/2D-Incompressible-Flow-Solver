@@ -45,6 +45,7 @@ void createCoordinatesXYM()
         }
     }
 }
+
 int main()
 {
     createCoordinatesXY();
