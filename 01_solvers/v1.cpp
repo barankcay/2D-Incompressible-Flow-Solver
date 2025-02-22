@@ -87,24 +87,14 @@ double secondOrderPDEcentralDiff(vector<vector<double>> &variable, int i, int j,
     return pde;
 }
 
-void uStarCalculator(fields &field, constParameters params)
+void StarCalculator(fields &field, constParameters params)
 {
     for (int i = 1; i < params.Nx + 1; i++)
     {
         for (int j = 1; j < params.Ny + 1; j++)
         {
-            field.uStar[i][j] = field.u[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.u, i, j, 0, 1, params)) - (field.u[i][j] * firstOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + field.v[i][j] * firstOrderPDEcentralDiff(field.u, i, j, 0, 1, params)));
-        }
-    }
-}
-
-void vStarCalculator(fields &field, constParameters params)
-{
-    for (int i = 1; i < params.Nx + 1; i++)
-    {
-        for (int j = 1; j < params.Ny + 1; j++)
-        {
-            field.vStar[i][j] = field.v[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.v, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.v, i, j, 0, 1, params)) - (field.u[i][j] * firstOrderPDEcentralDiff(field.v, i, j, 1, 0, params) + field.v[i][j] * firstOrderPDEcentralDiff(field.v, i, j, 0, 1, params)));
+            field.uStar[i][j] = field.u[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.u, i, j, 0, 1, params)) - (field.u[i][j] * firstOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + 0.25 * (field.v[i + 1][j] + field.v[i - 1][j] + field.v[i][j + 1] + field.v[i][j - 1]) * firstOrderPDEcentralDiff(field.u, i, j, 0, 1, params)));
+            field.vStar[i][j] = field.v[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.v, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.v, i, j, 0, 1, params)) - (field.v[i][j] * firstOrderPDEcentralDiff(field.v, i, j, 0, 1, params) + 0.25 * (field.u[i + 1][j] + field.u[i - 1][j] + field.u[i][j + 1] + field.u[i][j - 1]) * firstOrderPDEcentralDiff(field.v, i, j, 1, 0, params)));
         }
     }
 }
