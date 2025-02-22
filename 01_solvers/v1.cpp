@@ -87,7 +87,7 @@ double secondOrderPDEcentralDiff(vector<vector<double>> &variable, int i, int j,
     return pde;
 }
 
-void StarCalculator(fields &field, constParameters params)
+void veloctiyStarCalculator(fields &field, constParameters params)
 {
     for (int i = 1; i < params.Nx + 1; i++)
     {
