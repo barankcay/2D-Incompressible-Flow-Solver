@@ -44,6 +44,7 @@ struct fields
     }
 };
 
+// function to create the coordinates of the nodes of cells
 void createCoordinatesXY(vector<vector<double>> &x, vector<vector<double>> &y, constParameters params)
 {
     for (int i = 0; i < params.Nx + 3; i++)
@@ -55,6 +56,8 @@ void createCoordinatesXY(vector<vector<double>> &x, vector<vector<double>> &y, c
         }
     }
 }
+
+// function to create the coordinates of the cell centers
 void createCoordinatesXYM(vector<vector<double>> &xm, vector<vector<double>> &ym, constParameters params)
 {
     for (int i = 0; i < params.Nx + 2; i++)
@@ -67,6 +70,7 @@ void createCoordinatesXYM(vector<vector<double>> &xm, vector<vector<double>> &ym
     }
 }
 
+// function to calculate the first order partial derivative using central differencing
 double firstOrderPDEcentralDiff(vector<vector<double>> &variable, int i, int j, int x, int y, constParameters params)
 { // x and y are the direction of the derivative
     // i and j are the indices of the variable
@@ -77,6 +81,7 @@ double firstOrderPDEcentralDiff(vector<vector<double>> &variable, int i, int j, 
     return pde;
 }
 
+// function to calculate the second order partial derivative using central differencing
 double secondOrderPDEcentralDiff(vector<vector<double>> &variable, int i, int j, int x, int y, constParameters params)
 { // x and y are the direction of the derivative
     // i and j are the indices of the variable
@@ -87,6 +92,7 @@ double secondOrderPDEcentralDiff(vector<vector<double>> &variable, int i, int j,
     return pde;
 }
 
+// PREDICTOR STEP
 void veloctiyStarCalculator(fields &field, constParameters params)
 {
     for (int i = 1; i < params.Nx + 1; i++)
@@ -99,6 +105,7 @@ void veloctiyStarCalculator(fields &field, constParameters params)
     }
 }
 
+// CORRECTOR STEP
 int main()
 {
     constParameters params;
