@@ -23,7 +23,9 @@ struct fields
     vector<vector<double>> xm;
     vector<vector<double>> ym;
     vector<vector<double>> u;
+    vector<vector<double>> uStar;
     vector<vector<double>> v;
+    vector<vector<double>> vStar;
     vector<vector<double>> p;
 
     fields(int Nx, int Ny)
@@ -33,6 +35,8 @@ struct fields
         xm.resize(Nx + 2, vector<double>(Ny + 2));
         ym.resize(Nx + 2, vector<double>(Ny + 2));
         u.resize(Nx + 2, vector<double>(Ny + 2));
+        uStar.resize(Nx + 2, vector<double>(Ny + 2));
+        vStar.resize(Nx + 2, vector<double>(Ny + 2));
         v.resize(Nx + 2, vector<double>(Ny + 2));
         p.resize(Nx + 2, vector<double>(Ny + 2));
     }
