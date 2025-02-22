@@ -14,6 +14,8 @@ struct constParameters
     double hy = lengthY / (Ny + 2);
     double time;
     double timeStepSize;
+    double kinematicViscosity = 0.01;
+    double density = 1.0;
 };
 
 struct fields
@@ -61,6 +63,48 @@ void createCoordinatesXYM(vector<vector<double>> &xm, vector<vector<double>> &ym
         {
             xm[i][j] = params.hx / 2 + i * params.hx;
             ym[i][j] = params.hy / 2 + j * params.hy;
+        }
+    }
+}
+
+double firstOrderPDEcentralDiff(vector<vector<double>> &variable, int i, int j, int x, int y, constParameters params)
+{ // x and y are the direction of the derivative
+    // i and j are the indices of the variable
+    // if x = 1 and y = 0, then the derivative is in the x direction
+    // if x = 0 and y = 1, then the derivative is in the y direction
+    double pde;
+    pde = (variable[i + x][j + y] - variable[i - x][j - y]) / (2 * (x * params.hx + y * params.hy));
+    return pde;
+}
+
+double secondOrderPDEcentralDiff(vector<vector<double>> &variable, int i, int j, int x, int y, constParameters params)
+{ // x and y are the direction of the derivative
+    // i and j are the indices of the variable
+    // if x = 1 and y = 0, then the derivative is in the x direction
+    // if x = 0 and y = 1, then the derivative is in the y direction
+    double pde;
+    pde = (variable[i + x][j + y] - 2 * variable[i][j] + variable[i - x][j - y]) / pow((x * params.hx + y * params.hy), 2);
+    return pde;
+}
+
+void uStarCalculator(fields &field, constParameters params)
+{
+    for (int i = 1; i < params.Nx + 1; i++)
+    {
+        for (int j = 1; j < params.Ny + 1; j++)
+        {
+            field.uStar[i][j] = field.u[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.u, i, j, 0, 1, params)) - (field.u[i][j] * firstOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + field.v[i][j] * firstOrderPDEcentralDiff(field.u, i, j, 0, 1, params)));
+        }
+    }
+}
+
+void vStarCalculator(fields &field, constParameters params)
+{
+    for (int i = 1; i < params.Nx + 1; i++)
+    {
+        for (int j = 1; j < params.Ny + 1; j++)
+        {
+            field.vStar[i][j] = field.v[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.v, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.v, i, j, 0, 1, params)) - (field.u[i][j] * firstOrderPDEcentralDiff(field.v, i, j, 1, 0, params) + field.v[i][j] * firstOrderPDEcentralDiff(field.v, i, j, 0, 1, params)));
         }
     }
 }
