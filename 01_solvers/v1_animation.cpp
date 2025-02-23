@@ -130,8 +130,8 @@ void veloctiyStarCalculator(fields &field, constParameters params)
     {
         for (int j = 1; j < params.Ny + 1; j++)
         {
-            field.uStar[i][j] = field.u[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.u, i, j, 0, 1, params)) - (field.u[i][j] * firstOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + 0.25 * (field.v[i + 1][j] + field.v[i - 1][j] + field.v[i][j + 1] + field.v[i][j - 1]) * firstOrderPDEcentralDiff(field.u, i, j, 0, 1, params)));
-            field.vStar[i][j] = field.v[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.v, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.v, i, j, 0, 1, params)) - (field.v[i][j] * firstOrderPDEcentralDiff(field.v, i, j, 0, 1, params) + 0.25 * (field.u[i + 1][j] + field.u[i - 1][j] + field.u[i][j + 1] + field.u[i][j - 1]) * firstOrderPDEcentralDiff(field.v, i, j, 1, 0, params)));
+            field.uStar[i][j] = field.u[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.u, i, j, 0, 1, params)) - (field.u[i][j] * firstOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + 0.25 * (field.v[i - 1][j] + field.v[i][j] + field.v[i - 1][j + 1] + field.v[i][j + 1]) * firstOrderPDEcentralDiff(field.u, i, j, 0, 1, params)));
+            field.vStar[i][j] = field.v[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.v, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.v, i, j, 0, 1, params)) - (field.v[i][j] * firstOrderPDEcentralDiff(field.v, i, j, 0, 1, params) + 0.25 * (field.u[i][j - 1] + field.u[i][j] + field.u[i + 1][j - 1] + field.u[i + 1][j]) * firstOrderPDEcentralDiff(field.v, i, j, 1, 0, params)));
         }
     }
 }
@@ -221,7 +221,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 1;
+    params.courantNumber = 0.1;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
@@ -260,7 +260,7 @@ int main()
         {
             for (int j = 0; j < params.Ny + 2; j++)
             {
-                cout << field.v[i][j] << " ";
+                cout << field.u[i][j] << " ";
             }
             cout << endl;
         }
