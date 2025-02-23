@@ -22,6 +22,7 @@ struct constParameters
     double vBottomWall;
     double uLeftWall;
     double uRightWall;
+    double courantNumber;
 };
 
 struct fields
@@ -220,32 +221,34 @@ int main()
 {
 
     constParameters params;
+    params.courantNumber = 1;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
-    params.vTopWall = 200;
+    params.vTopWall = 1;
     params.vBottomWall = 0.0;
     params.uLeftWall = 0.0;
     params.uRightWall = 0.0;
 
-    params.Nx = 4;
-    params.Ny = 4;
-    params.lengthX = 20;
-    params.lengthY = 20;
+    params.Nx = 18;
+    params.Ny = 18;
+    params.lengthX = 0.1;
+    params.lengthY = 0.1;
     params.hx = params.lengthX / (params.Nx + 2);
     params.hy = params.lengthY / (params.Ny + 2);
 
     params.startTime = 0;
-    params.endTime = 300;
-    params.timeStepSize = 1;
+    params.endTime = 0.1;
+    params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / params.vTopWall;
 
     fields field(params.Nx, params.Ny);
     createCoordinatesXY(field.x, field.y, params);
     createCoordinatesXYM(field.xm, field.ym, params);
-
-    for (int t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
+    int count = 0;
+    for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
     {
-        saveToFile(field.u, "u" + to_string(t) + ".csv", params.Nx, params.Ny);
+
+        saveToFile(field.u, to_string(count) + "_u_" + to_string(t) + ".csv", params.Nx, params.Ny);
         setBoundaryConditions(1, field.u, params);
         setBoundaryConditions(2, field.v, params);
         setBoundaryConditions(0, field.p, params);
@@ -257,12 +260,14 @@ int main()
         {
             for (int j = 0; j < params.Ny + 2; j++)
             {
-                cout << field.u[i][j] << " ";
+                cout << field.v[i][j] << " ";
             }
             cout << endl;
         }
         cout << endl;
-    }
 
+        count++;
+    }
+    cout << params.timeStepSize << endl;
     return 0;
 }
