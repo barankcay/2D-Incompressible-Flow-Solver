@@ -10,8 +10,8 @@ struct constParameters
     int Ny;
     double lengthX;
     double lengthY;
-    double hx = lengthX / (Nx + 2);
-    double hy = lengthY / (Ny + 2);
+    double hx;
+    double hy;
     double startTime;
     double endTime;
     double timeStepSize;
@@ -168,12 +168,12 @@ void swapFields(fields &field)
 
 void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters params)
 {
-    for (int i = 1; i < params.Nx; i++)
+    for (int i = 1; i < params.Nx + 1; i++)
     {
         M[i][0] = b == 1 ? 2 * params.uLeftWall - M[i][1] : M[i][1];
         M[i][params.Ny + 1] = b == 1 ? 2 * params.uRightWall - M[i][params.Ny] : M[i][params.Ny];
     }
-    for (int j = 1; j < params.Ny; j++)
+    for (int j = 1; j < params.Ny + 1; j++)
     {
         M[0][j] = b == 2 ? 2 * params.vTopWall - M[1][j] : M[1][j];
         M[params.Nx + 1][j] = b == 2 ? 2 * params.vBottomWall - M[params.Nx][j] : M[params.Nx][j];
