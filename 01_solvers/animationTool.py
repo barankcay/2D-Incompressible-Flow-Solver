@@ -5,8 +5,8 @@ import os
 import re
 
 # Set the color range constant
-MIN =35 
-MAX = 43
+MIN =-2
+MAX = 2
 
 folder_path = "."  # Current folder, change if needed
 

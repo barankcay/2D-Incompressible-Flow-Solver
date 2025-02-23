@@ -23,6 +23,7 @@ struct constParameters
     double uLeftWall;
     double uRightWall;
     double courantNumber;
+    int numberOfTimeSteps;
 };
 
 struct fields
@@ -58,9 +59,9 @@ struct fields
 // function to create the coordinates of the nodes of cells
 void createCoordinatesXY(vector<vector<double>> &x, vector<vector<double>> &y, constParameters params)
 {
-    for (int i = 0; i < params.Nx + 3; i++)
+    for (int i = 0; i < params.Nx + 2; i++)
     {
-        for (int j = 0; j < params.Ny + 3; j++)
+        for (int j = 0; j < params.Ny + 2; j++)
         {
             x[i][j] = i * params.hx;
             y[i][j] = j * params.hy;
@@ -164,10 +165,16 @@ void velocityCorrector(fields &field, constParameters params)
     }
 }
 
-void swapFields(fields &field)
+void swapFields(fields &field, constParameters params)
 {
-    field.u = field.uNew;
-    field.v = field.vNew;
+    for (int i = 1; i < params.Nx + 1; i++)
+    {
+        for (int j = 1; j < params.Ny + 1; j++)
+        {
+            field.u[i][j] = field.uNew[i][j];
+            field.v[i][j] = field.vNew[i][j];
+        }
+    }
 }
 
 void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters params)
@@ -187,45 +194,66 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters par
     M[0][params.Ny + 1] = 0.5 * (M[0][params.Ny] + M[1][params.Ny + 1]);
     M[params.Nx + 1][params.Ny + 1] = 0.5 * (M[params.Nx][params.Ny + 1] + M[params.Nx + 1][params.Ny]);
 }
-void saveToFile(const vector<vector<double>> &u, const string &filename, int Nx, int Ny)
+
+void saveToVTK(const fields &field, const constParameters &params, const string &filename)
 {
-    ofstream outFile(filename);
-    if (outFile.is_open())
+    ofstream vtkFile(filename);
+    if (!vtkFile.is_open())
     {
-        // Set fixed point notation and set precision for writing to the file
-        outFile << fixed << setprecision(6); // Set the precision to 6 decimal places
+        cerr << "Error: Unable to open file " << filename << endl;
+        return;
+    }
 
-        // Write the data row by row, each row being a line in the CSV
-        for (int i = 0; i <= Nx + 1; i++) // Include boundary cells (0 to N+1)
+    // Write the VTK header
+    vtkFile << "# vtk DataFile Version 3.0\n";
+    vtkFile << "Flow Field Data\n";
+    vtkFile << "ASCII\n";
+    vtkFile << "DATASET STRUCTURED_GRID\n";
+    vtkFile << "DIMENSIONS " << params.Nx + 2 << " " << params.Ny + 2 << " 1\n";
+    vtkFile << "POINTS " << (params.Nx + 2) * (params.Ny + 2) << " float\n";
+
+    // Write the grid coordinates
+    for (int j = 0; j < params.Ny + 2; j++)
+    {
+        for (int i = 0; i < params.Nx + 2; i++)
         {
-            for (int j = 0; j <= Ny + 1; j++) // Include boundary cells (0 to N+1)
-            {
-                outFile << u[i][j]; // Write the value
-
-                if (j < Ny + 1)     // Avoid adding a comma at the end of the row
-                    outFile << ","; // Separate values with a comma
-            }
-            outFile << "\n"; // New line for each row
+            vtkFile << field.x[i][j] << " " << field.y[i][j] << " 0.0\n";
         }
-
-        outFile.close();
-        // cout << "Data saved to " << filename << endl;
     }
-    else
+
+    // Write the velocity and pressure data
+    vtkFile << "POINT_DATA " << (params.Nx + 2) * (params.Ny + 2) << "\n";
+    vtkFile << "VECTORS velocity float\n";
+    for (int j = 0; j < params.Ny + 2; j++)
     {
-        cerr << "Unable to open file: " << filename << endl;
+        for (int i = 0; i < params.Nx + 2; i++)
+        {
+            vtkFile << field.u[i][j] << " " << field.v[i][j] << " 0.0\n";
+        }
     }
-}
 
+    vtkFile << "SCALARS pressure float 1\n";
+    vtkFile << "LOOKUP_TABLE default\n";
+    for (int j = 0; j < params.Ny + 2; j++)
+    {
+        for (int i = 0; i < params.Nx + 2; i++)
+        {
+            vtkFile << field.p[i][j] << "\n";
+        }
+    }
+
+    vtkFile.close();
+    cout << "Data saved to " << filename << endl;
+}
 int main()
 {
 
     constParameters params;
-    params.courantNumber = 1;
+    params.courantNumber = 0.01;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
-    params.vTopWall = 1;
+    params.vTopWall = 0.5;
     params.vBottomWall = 0.0;
     params.uLeftWall = 0.0;
     params.uRightWall = 0.0;
@@ -240,34 +268,48 @@ int main()
     params.startTime = 0;
     params.endTime = 0.5;
     params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / params.vTopWall;
+    params.numberOfTimeSteps = (params.endTime - params.startTime) / params.timeStepSize;
 
     fields field(params.Nx, params.Ny);
     createCoordinatesXY(field.x, field.y, params);
     createCoordinatesXYM(field.xm, field.ym, params);
+    setBoundaryConditions(1, field.u, params);
+    setBoundaryConditions(2, field.v, params);
+    setBoundaryConditions(0, field.p, params);
     int count = 0;
     for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
     {
-
-        // saveToFile(field.p, to_string(count) + "_u_" + to_string(t) + ".csv", params.Nx, params.Ny);
-        setBoundaryConditions(1, field.u, params);
-        setBoundaryConditions(2, field.v, params);
-        setBoundaryConditions(0, field.p, params);
-        for (int i = 0; i < params.Nx + 2; i++)
+        if (count == params.numberOfTimeSteps - 1) // Save every 10 time steps
         {
-            for (int j = 0; j < params.Ny + 2; j++)
-            {
-                cout << field.v[i][j] << " ";
-            }
-            cout << endl;
+            string filename = "output_" + to_string(count) + ".vtk";
+            saveToVTK(field, params, filename);
         }
-        cout << endl;
+
+        // for (int i = 0; i < params.Nx + 2; i++)
+        // {
+        //     for (int j = 0; j < params.Ny + 2; j++)
+        //     {
+        //         cout << field.p[i][j] << " ";
+        //     }
+        //     cout << endl;
+        // }
+        // cout << endl;
         veloctiyStarCalculator(field, params);
+
         poissonEquationSolver(field, params);
         velocityCorrector(field, params);
-        swapFields(field);
+        swapFields(field, params);
+        // if (count == params.numberOfTimeSteps - 1)
+        // {
+        //     for (int i = 0; i < params.Nx + 2; i++)
+        //     {
+        //         cout << field.v[i][params.Ny / 2] << " ";
+        //     }
+        // }
 
         count++;
     }
     cout << params.timeStepSize << endl;
+    cout << "Simulation completed. Data saved in VTK format." << endl;
     return 0;
 }

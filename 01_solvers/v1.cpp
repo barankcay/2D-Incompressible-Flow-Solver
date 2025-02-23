@@ -22,6 +22,8 @@ struct constParameters
     double vBottomWall;
     double uLeftWall;
     double uRightWall;
+    double courantNumber;
+    int numberOfTimeSteps;
 };
 
 struct fields
@@ -57,9 +59,9 @@ struct fields
 // function to create the coordinates of the nodes of cells
 void createCoordinatesXY(vector<vector<double>> &x, vector<vector<double>> &y, constParameters params)
 {
-    for (int i = 0; i < params.Nx + 3; i++)
+    for (int i = 0; i < params.Nx + 2; i++)
     {
-        for (int j = 0; j < params.Ny + 3; j++)
+        for (int j = 0; j < params.Ny + 2; j++)
         {
             x[i][j] = i * params.hx;
             y[i][j] = j * params.hy;
@@ -129,8 +131,8 @@ void veloctiyStarCalculator(fields &field, constParameters params)
     {
         for (int j = 1; j < params.Ny + 1; j++)
         {
-            field.uStar[i][j] = field.u[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.u, i, j, 0, 1, params)) - (field.u[i][j] * firstOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + 0.25 * (field.v[i + 1][j] + field.v[i - 1][j] + field.v[i][j + 1] + field.v[i][j - 1]) * firstOrderPDEcentralDiff(field.u, i, j, 0, 1, params)));
-            field.vStar[i][j] = field.v[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.v, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.v, i, j, 0, 1, params)) - (field.v[i][j] * firstOrderPDEcentralDiff(field.v, i, j, 0, 1, params) + 0.25 * (field.u[i + 1][j] + field.u[i - 1][j] + field.u[i][j + 1] + field.u[i][j - 1]) * firstOrderPDEcentralDiff(field.v, i, j, 1, 0, params)));
+            field.uStar[i][j] = field.u[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.u, i, j, 0, 1, params)) - (field.u[i][j] * firstOrderPDEcentralDiff(field.u, i, j, 1, 0, params) + 0.25 * (field.v[i - 1][j] + field.v[i][j] + field.v[i - 1][j + 1] + field.v[i][j + 1]) * firstOrderPDEcentralDiff(field.u, i, j, 0, 1, params)));
+            field.vStar[i][j] = field.v[i][j] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.v, i, j, 1, 0, params) + secondOrderPDEcentralDiff(field.v, i, j, 0, 1, params)) - (field.v[i][j] * firstOrderPDEcentralDiff(field.v, i, j, 0, 1, params) + 0.25 * (field.u[i][j - 1] + field.u[i][j] + field.u[i + 1][j - 1] + field.u[i + 1][j]) * firstOrderPDEcentralDiff(field.v, i, j, 1, 0, params)));
         }
     }
 }
@@ -163,10 +165,16 @@ void velocityCorrector(fields &field, constParameters params)
     }
 }
 
-void swapFields(fields &field)
+void swapFields(fields &field, constParameters params)
 {
-    field.u = field.uNew;
-    field.v = field.vNew;
+    for (int i = 1; i < params.Nx + 1; i++)
+    {
+        for (int j = 1; j < params.Ny + 1; j++)
+        {
+            field.u[i][j] = field.uNew[i][j];
+            field.v[i][j] = field.vNew[i][j];
+        }
+    }
 }
 
 void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters params)
@@ -191,48 +199,61 @@ int main()
 {
 
     constParameters params;
+    params.courantNumber = 0.01;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
-    params.vTopWall = 200;
+    params.vTopWall = 0.5;
     params.vBottomWall = 0.0;
     params.uLeftWall = 0.0;
     params.uRightWall = 0.0;
 
-    params.Nx = 4;
-    params.Ny = 4;
-    params.lengthX = 20;
-    params.lengthY = 20;
+    params.Nx = 18;
+    params.Ny = 18;
+    params.lengthX = 0.1;
+    params.lengthY = 0.1;
     params.hx = params.lengthX / (params.Nx + 2);
     params.hy = params.lengthY / (params.Ny + 2);
 
     params.startTime = 0;
-    params.endTime = 300;
-    params.timeStepSize = 1;
+    params.endTime = 0.5;
+    params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / params.vTopWall;
+    params.numberOfTimeSteps = (params.endTime - params.startTime) / params.timeStepSize;
 
     fields field(params.Nx, params.Ny);
     createCoordinatesXY(field.x, field.y, params);
     createCoordinatesXYM(field.xm, field.ym, params);
-
-    for (int t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
+    setBoundaryConditions(1, field.u, params);
+    setBoundaryConditions(2, field.v, params);
+    setBoundaryConditions(0, field.p, params);
+    int count = 0;
+    for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
     {
-        setBoundaryConditions(1, field.u, params);
-        setBoundaryConditions(2, field.v, params);
-        setBoundaryConditions(0, field.p, params);
+
+        // for (int i = 0; i < params.Nx + 2; i++)
+        // {
+        //     for (int j = 0; j < params.Ny + 2; j++)
+        //     {
+        //         cout << field.p[i][j] << " ";
+        //     }
+        //     cout << endl;
+        // }
+        // cout << endl;
         veloctiyStarCalculator(field, params);
+
         poissonEquationSolver(field, params);
         velocityCorrector(field, params);
-        swapFields(field);
-        for (int i = 0; i < params.Nx + 2; i++)
-        {
-            for (int j = 0; j < params.Ny + 2; j++)
-            {
-                cout << field.u[i][j] << " ";
-            }
-            cout << endl;
-        }
-        cout << endl;
-    }
+        swapFields(field, params);
+        // if (count == params.numberOfTimeSteps - 1)
+        // {
+        //     for (int i = 0; i < params.Nx + 2; i++)
+        //     {
+        //         cout << field.v[i][params.Ny / 2] << " ";
+        //     }
+        // }
 
+        count++;
+    }
+    cout << params.timeStepSize << endl;
     return 0;
 }
