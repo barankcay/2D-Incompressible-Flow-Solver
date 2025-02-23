@@ -1,7 +1,8 @@
 #include <iostream>
 #include <vector>
+#include <fstream> // Include for file handling
+#include <iomanip> // Include for fixed precision formatting
 #include <cmath>
-
 using namespace std;
 
 struct constParameters
@@ -185,6 +186,36 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters par
     M[0][params.Ny + 1] = 0.5 * (M[0][params.Ny] + M[1][params.Ny + 1]);
     M[params.Nx + 1][params.Ny + 1] = 0.5 * (M[params.Nx][params.Ny + 1] + M[params.Nx + 1][params.Ny]);
 }
+void saveToFile(const vector<vector<double>> &u, const string &filename, int Nx, int Ny)
+{
+    ofstream outFile(filename);
+    if (outFile.is_open())
+    {
+        // Set fixed point notation and set precision for writing to the file
+        outFile << fixed << setprecision(6); // Set the precision to 6 decimal places
+
+        // Write the data row by row, each row being a line in the CSV
+        for (int i = 0; i <= Nx + 1; i++) // Include boundary cells (0 to N+1)
+        {
+            for (int j = 0; j <= Ny + 1; j++) // Include boundary cells (0 to N+1)
+            {
+                outFile << u[i][j]; // Write the value
+
+                if (j < Ny + 1)     // Avoid adding a comma at the end of the row
+                    outFile << ","; // Separate values with a comma
+            }
+            outFile << "\n"; // New line for each row
+        }
+
+        outFile.close();
+        cout << "Data saved to " << filename << endl;
+    }
+    else
+    {
+        cerr << "Unable to open file: " << filename << endl;
+    }
+}
+
 int main()
 {
 
@@ -214,6 +245,7 @@ int main()
 
     for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
     {
+        saveToFile(field.u, "u" + to_string(t) + ".csv", params.Nx, params.Ny);
         setBoundaryConditions(1, field.u, params);
         setBoundaryConditions(2, field.v, params);
         setBoundaryConditions(0, field.p, params);
