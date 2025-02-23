@@ -12,12 +12,13 @@ struct constParameters
     double lengthY;
     double hx = lengthX / (Nx + 2);
     double hy = lengthY / (Ny + 2);
-    double time;
+    double startTime;
+    double endTime;
     double timeStepSize;
     double kinematicViscosity;
     double density;
-    double uTopWall;
-    double uBottomWall;
+    double vTopWall;
+    double vBottomWall;
     double uLeftWall;
     double uRightWall;
 };
@@ -165,8 +166,22 @@ void swapFields(fields &field)
     field.v = field.vNew;
 }
 
-void setBoundaryConditions(fields &field, constParameters params)
+void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters params)
 {
+    for (int i = 1; i < params.Nx; i++)
+    {
+        M[i][0] = b == 1 ? 2 * params.uLeftWall - M[i][1] : M[i][1];
+        M[i][params.Ny + 1] = b == 1 ? 2 * params.uRightWall - M[i][params.Ny] : M[i][params.Ny];
+    }
+    for (int j = 1; j < params.Ny; j++)
+    {
+        M[0][j] = b == 2 ? 2 * params.vTopWall - M[1][j] : M[1][j];
+        M[params.Nx + 1][j] = b == 2 ? 2 * params.vBottomWall - M[params.Nx][j] : M[params.Nx][j];
+    }
+    M[0][0] = 0.5 * (M[1][0] + M[0][1]);
+    M[params.Nx + 1][0] = 0.5 * (M[params.Nx][0] + M[params.Nx + 1][1]);
+    M[0][params.Ny + 1] = 0.5 * (M[0][params.Ny] + M[1][params.Ny + 1]);
+    M[params.Nx + 1][params.Ny + 1] = 0.5 * (M[params.Nx][params.Ny + 1] + M[params.Nx + 1][params.Ny]);
 }
 int main()
 {
@@ -175,8 +190,8 @@ int main()
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
-    params.uTopWall = 1.0;
-    params.uBottomWall = 0.0;
+    params.vTopWall = 1.0;
+    params.vBottomWall = 0.0;
     params.uLeftWall = 0.0;
     params.uRightWall = 0.0;
 
@@ -187,21 +202,24 @@ int main()
     params.hx = params.lengthX / (params.Nx + 2);
     params.hy = params.lengthY / (params.Ny + 2);
 
-    params.time = 20;
-    params.timeStepSize = 0.1;
+    params.startTime = 0;
+    params.endTime = 20;
+    params.timeStepSize = 1;
 
     fields field(params.Nx, params.Ny);
     createCoordinatesXY(field.x, field.y, params);
     createCoordinatesXYM(field.xm, field.ym, params);
 
-    // for (int i = 0; i < params.Nx + 3; i++)
-    // {
-    //     for (int j = 0; j < params.Ny + 3; j++)
-    //     {
-    //         cout << field.x[i][j] << "," << field.y[i][j] << " ";
-    //     }
-    //     cout << endl;
-    // }
+    for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
+    {
+        setBoundaryConditions(1, field.u, params);
+        setBoundaryConditions(2, field.v, params);
+        setBoundaryConditions(0, field.p, params);
+        veloctiyStarCalculator(field, params);
+        poissonEquationSolver(field, params);
+        velocityCorrector(field, params);
+        swapFields(field);
+    }
 
     return 0;
 }
