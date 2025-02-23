@@ -14,8 +14,12 @@ struct constParameters
     double hy = lengthY / (Ny + 2);
     double time;
     double timeStepSize;
-    double kinematicViscosity = 0.01;
-    double density = 1.0;
+    double kinematicViscosity;
+    double density;
+    double uTopWall;
+    double uBottomWall;
+    double uLeftWall;
+    double uRightWall;
 };
 
 struct fields
@@ -26,8 +30,10 @@ struct fields
     vector<vector<double>> ym;
     vector<vector<double>> u;
     vector<vector<double>> uStar;
+    vector<vector<double>> uNew;
     vector<vector<double>> v;
     vector<vector<double>> vStar;
+    vector<vector<double>> vNew;
     vector<vector<double>> p;
 
     fields(int Nx, int Ny)
@@ -92,6 +98,26 @@ double secondOrderPDEcentralDiff(vector<vector<double>> &variable, int i, int j,
     return pde;
 }
 
+double firstOrderPDEforwardDiff(vector<vector<double>> &variable, int i, int j, int x, int y, constParameters params)
+{ // x and y are the direction of the derivative
+    // i and j are the indices of the variable
+    // if x = 1 and y = 0, then the derivative is in the x direction
+    // if x = 0 and y = 1, then the derivative is in the y direction
+    double pde;
+    pde = (variable[i + x][j + y] - variable[i][j]) / (x * params.hx + y * params.hy);
+    return pde;
+}
+
+double firstOrderPDEbackwardDiff(vector<vector<double>> &variable, int i, int j, int x, int y, constParameters params)
+{ // x and y are the direction of the derivative
+    // i and j are the indices of the variable
+    // if x = 1 and y = 0, then the derivative is in the x direction
+    // if x = 0 and y = 1, then the derivative is in the y direction
+    double pde;
+    pde = (variable[i][j] - variable[i - x][j - y]) / (x * params.hx + y * params.hy);
+    return pde;
+}
+
 // PREDICTOR STEP
 void veloctiyStarCalculator(fields &field, constParameters params)
 {
@@ -104,19 +130,65 @@ void veloctiyStarCalculator(fields &field, constParameters params)
         }
     }
 }
+// POISSON EQUATION SOLVER
+
+void poissonEquationSolver(fields &field, constParameters params)
+{
+    for (int k = 0; k < 300; k++)
+    {
+        for (int i = 1; i < params.Nx + 1; i++)
+        {
+            for (int j = 1; j < params.Ny + 1; j++)
+            {
+                field.p[i][j] = (pow(params.hx, 2) * pow(params.hx, 2) / (2 * (params.hx + params.hy))) * (((field.p[i + 1][j] + field.p[i - 1][j]) / pow(params.hx, 2)) + ((field.p[i][j + 1] + field.p[i][j - 1]) / pow(params.hy, 2)) - ((params.density / params.timeStepSize) * (firstOrderPDEforwardDiff(field.uStar, i, j, 1, 0, params) + firstOrderPDEforwardDiff(field.vStar, i, j, 0, 1, params))));
+            }
+        }
+    }
+}
 
 // CORRECTOR STEP
+void velocityCorrector(fields &field, constParameters params)
+{
+    for (int i = 1; i < params.Nx + 1; i++)
+    {
+        for (int j = 1; j < params.Ny + 1; j++)
+        {
+            field.uNew[i][j] = field.uStar[i][j] - (params.timeStepSize / params.density) * (firstOrderPDEbackwardDiff(field.p, i, j, 1, 0, params));
+            field.vNew[i][j] = field.vStar[i][j] - (params.timeStepSize / params.density) * (firstOrderPDEbackwardDiff(field.p, i, j, 0, 1, params));
+        }
+    }
+}
+
+void swapFields(fields &field)
+{
+    field.u = field.uNew;
+    field.v = field.vNew;
+}
+
+void setBoundaryConditions(fields &field, constParameters params)
+{
+}
 int main()
 {
+
     constParameters params;
+    params.density = 1.0;
+    params.kinematicViscosity = 0.01;
+
+    params.uTopWall = 1.0;
+    params.uBottomWall = 0.0;
+    params.uLeftWall = 0.0;
+    params.uRightWall = 0.0;
+
     params.Nx = 3;
     params.Ny = 3;
     params.lengthX = 1.0;
     params.lengthY = 1.0;
-    params.time = 20;
-    params.timeStepSize = 0.1;
     params.hx = params.lengthX / (params.Nx + 2);
     params.hy = params.lengthY / (params.Ny + 2);
+
+    params.time = 20;
+    params.timeStepSize = 0.1;
 
     fields field(params.Nx, params.Ny);
     createCoordinatesXY(field.x, field.y, params);
