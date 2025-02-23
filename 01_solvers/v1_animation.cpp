@@ -221,7 +221,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 0.1;
+    params.courantNumber = 1;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
@@ -238,7 +238,7 @@ int main()
     params.hy = params.lengthY / (params.Ny + 2);
 
     params.startTime = 0;
-    params.endTime = 0.1;
+    params.endTime = 0.5;
     params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / params.vTopWall;
 
     fields field(params.Nx, params.Ny);
@@ -248,7 +248,7 @@ int main()
     for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
     {
 
-        saveToFile(field.u, to_string(count) + "_u_" + to_string(t) + ".csv", params.Nx, params.Ny);
+        saveToFile(field.p, to_string(count) + "_u_" + to_string(t) + ".csv", params.Nx, params.Ny);
         setBoundaryConditions(1, field.u, params);
         setBoundaryConditions(2, field.v, params);
         setBoundaryConditions(0, field.p, params);
@@ -260,7 +260,7 @@ int main()
         {
             for (int j = 0; j < params.Ny + 2; j++)
             {
-                cout << field.u[i][j] << " ";
+                cout << field.p[i][j] << " ";
             }
             cout << endl;
         }
