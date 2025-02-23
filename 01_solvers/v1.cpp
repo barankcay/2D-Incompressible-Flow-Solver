@@ -1,7 +1,8 @@
 #include <iostream>
 #include <vector>
+#include <fstream> // Include for file handling
+#include <iomanip> // Include for fixed precision formatting
 #include <cmath>
-
 using namespace std;
 
 struct constParameters
@@ -143,7 +144,7 @@ void poissonEquationSolver(fields &field, constParameters params)
         {
             for (int j = 1; j < params.Ny + 1; j++)
             {
-                field.p[i][j] = (pow(params.hx, 2) * pow(params.hx, 2) / (2 * (params.hx + params.hy))) * (((field.p[i + 1][j] + field.p[i - 1][j]) / pow(params.hx, 2)) + ((field.p[i][j + 1] + field.p[i][j - 1]) / pow(params.hy, 2)) - ((params.density / params.timeStepSize) * (firstOrderPDEforwardDiff(field.uStar, i, j, 1, 0, params) + firstOrderPDEforwardDiff(field.vStar, i, j, 0, 1, params))));
+                field.p[i][j] = (pow(params.hx, 2) * pow(params.hx, 2) / (2 * (pow(params.hx, 2) + pow(params.hy, 2)))) * (((field.p[i + 1][j] + field.p[i - 1][j]) / pow(params.hx, 2)) + ((field.p[i][j + 1] + field.p[i][j - 1]) / pow(params.hy, 2)) - ((params.density / params.timeStepSize) * (firstOrderPDEforwardDiff(field.uStar, i, j, 1, 0, params) + firstOrderPDEforwardDiff(field.vStar, i, j, 0, 1, params))));
             }
         }
     }
@@ -185,6 +186,7 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters par
     M[0][params.Ny + 1] = 0.5 * (M[0][params.Ny] + M[1][params.Ny + 1]);
     M[params.Nx + 1][params.Ny + 1] = 0.5 * (M[params.Nx][params.Ny + 1] + M[params.Nx + 1][params.Ny]);
 }
+
 int main()
 {
 
@@ -192,27 +194,27 @@ int main()
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
-    params.vTopWall = 1.0;
+    params.vTopWall = 200;
     params.vBottomWall = 0.0;
     params.uLeftWall = 0.0;
     params.uRightWall = 0.0;
 
-    params.Nx = 3;
-    params.Ny = 3;
-    params.lengthX = 1.0;
-    params.lengthY = 1.0;
+    params.Nx = 4;
+    params.Ny = 4;
+    params.lengthX = 20;
+    params.lengthY = 20;
     params.hx = params.lengthX / (params.Nx + 2);
     params.hy = params.lengthY / (params.Ny + 2);
 
     params.startTime = 0;
-    params.endTime = 20;
+    params.endTime = 300;
     params.timeStepSize = 1;
 
     fields field(params.Nx, params.Ny);
     createCoordinatesXY(field.x, field.y, params);
     createCoordinatesXYM(field.xm, field.ym, params);
 
-    for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
+    for (int t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
     {
         setBoundaryConditions(1, field.u, params);
         setBoundaryConditions(2, field.v, params);
@@ -221,6 +223,15 @@ int main()
         poissonEquationSolver(field, params);
         velocityCorrector(field, params);
         swapFields(field);
+        for (int i = 0; i < params.Nx + 2; i++)
+        {
+            for (int j = 0; j < params.Ny + 2; j++)
+            {
+                cout << field.u[i][j] << " ";
+            }
+            cout << endl;
+        }
+        cout << endl;
     }
 
     return 0;
