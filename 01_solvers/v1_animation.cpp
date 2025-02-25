@@ -171,9 +171,9 @@ void velocityCorrector(fields &field, constParameters params)
 
 void swapFields(fields &field, constParameters params)
 {
-    for (int i = 1; i < params.Nx - 1; i++)
+    for (int i = 0; i < params.Nx; i++)
     {
-        for (int j = 1; j < params.Ny - 1; j++)
+        for (int j = 0; j < params.Ny; j++)
         {
             field.u[j][i] = field.uNew[j][i];
             field.v[j][i] = field.vNew[j][i];
@@ -283,11 +283,11 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 100;
+    params.courantNumber = 0.01;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
-    params.uTopWall = 0.5;
+    params.uTopWall = 1;
     params.uBottomWall = 0.0;
     params.uLeftWall = 0.0;
     params.uRightWall = 0.0;
@@ -297,15 +297,15 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 129;
-    params.Ny = 129;
+    params.Nx = 32;
+    params.Ny = 32;
     params.lengthX = 1;
     params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx);
     params.hy = params.lengthY / (params.Ny);
 
     params.startTime = 0;
-    params.endTime = 0.5;
+    params.endTime = 5;
     params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / params.uTopWall;
     params.numberOfTimeSteps = (params.endTime - params.startTime) / params.timeStepSize;
 
@@ -314,6 +314,7 @@ int main()
     createCoordinatesXYM(field.xm, field.ym, params);
     setBoundaryConditions(1, field.u, params);
     setBoundaryConditions(2, field.v, params);
+    setBoundaryConditions(0, field.p, params);
     int count = 0;
     for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
     {
@@ -322,22 +323,23 @@ int main()
         poissonEquationSolver(field, params);
         velocityCorrector(field, params);
         swapFields(field, params);
-
+        setBoundaryConditions(1, field.u, params);
+        setBoundaryConditions(2, field.v, params);
         setBoundaryConditions(0, field.p, params);
         if (count == params.numberOfTimeSteps - 1)
         {
-            // for (int j = 0; j < params.Ny; j++)
+            // for (int j = 0; j < params.Ny + 1; j++)
             // {
-            //     for (int i = 0; i < params.Nx; i++)
+            //     for (int i = 0; i < params.Nx + 1; i++)
             //     {
-            //         cout << field.xm[j][i] << "," << field.ym[j][i] << " ";
+            //         cout << field.x[j][i] << "," << field.y[j][i] << " ";
             //     }
             //     cout << endl;
             // }
 
-            for (int j = 0; j < params.Ny; j++)
+            for (int j = 0; j < params.Ny + 1; j++)
             {
-                cout << field.x[j][(params.Nx - 1) / 2] << ", " << field.y[j][(params.Nx - 1) / 2] << ", " << field.u[j][(params.Nx - 1) / 2] << endl;
+                cout << params.Ny - j << " " << field.x[j][(params.Nx) / 2] << ", " << field.y[j][(params.Nx) / 2] << ", " << field.u[j][(params.Nx) / 2] << endl;
             }
             cout << endl;
         }
