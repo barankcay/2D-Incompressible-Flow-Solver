@@ -139,6 +139,8 @@ void veloctiyStarCalculator(fields &field, constParameters params)
             field.vStar[j][i] = field.v[j][i] + params.timeStepSize * (params.kinematicViscosity * (secondOrderPDEcentralDiff(field.v, j, i, 1, 0, params) + secondOrderPDEcentralDiff(field.v, j, i, 0, 1, params)) - (field.v[j][i] * firstOrderPDEcentralDiff(field.v, j, i, 0, 1, params) + 0.25 * (field.u[j + 1][i] + field.u[j][i] + field.u[j + 1][i + 1] + field.u[j][i + 1]) * firstOrderPDEcentralDiff(field.v, j, i, 1, 0, params)));
         }
     }
+    setBoundaryConditions(1, field.uStar, params);
+    setBoundaryConditions(2, field.vStar, params);
 }
 // POISSON EQUATION SOLVER
 
