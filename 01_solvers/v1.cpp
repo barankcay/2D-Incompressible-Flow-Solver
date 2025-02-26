@@ -265,6 +265,9 @@ void swapFields(fields &field, constParameters params)
         {
             field.u[j][i] = field.uNew[j][i];
             field.v[j][i] = field.vNew[j][i];
+            field.p[j][i] = field.p[j][i];
+            field.uStar[j][i] = field.u[j][i];
+            field.vStar[j][i] = field.v[j][i];
         }
     }
 }
@@ -273,7 +276,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 1;
+    params.courantNumber = 1000;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
@@ -287,8 +290,8 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 129;
-    params.Ny = 129;
+    params.Nx = 32;
+    params.Ny = 32;
     params.lengthX = 1;
     params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx);
@@ -299,21 +302,22 @@ int main()
 
     params.startTime = 0;
     params.endTime = 0.5;
-    params.numberOfTimeSteps = (params.endTime - params.startTime) / params.timeStepSize;
 
     fields field(params.Nx, params.Ny);
-    updateTimeStepSize(field, params);
+
+    params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / params.uTopWall;
     params.numberOfTimeSteps = (params.endTime - params.startTime) / params.timeStepSize;
     initialization(field, params);
     createCoordinatesXY(field.x, field.y, params);
     createCoordinatesXYM(field.xm, field.ym, params);
+
     setBoundaryConditions(1, field.u, params);
     setBoundaryConditions(2, field.v, params);
     setBoundaryConditions(0, field.p, params);
     int count = 0;
     for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
     {
-        cout << (t / params.endTime) * 100 << "% calculated" << endl;
+        cout << (t / params.endTime) * 100 << " % calculated" << endl;
 
         updateTimeStepSize(field, params);
         veloctiyStarCalculator(field, params);
