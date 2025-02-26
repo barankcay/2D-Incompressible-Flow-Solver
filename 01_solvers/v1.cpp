@@ -298,7 +298,7 @@ int main()
     params.tolerance = 1e-6;
 
     params.startTime = 0;
-    params.endTime = 5;
+    params.endTime = 0.5;
     params.numberOfTimeSteps = (params.endTime - params.startTime) / params.timeStepSize;
 
     fields field(params.Nx, params.Ny);
@@ -313,6 +313,7 @@ int main()
     int count = 0;
     for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
     {
+        cout << (t / params.endTime) * 100 << "% calculated" << endl;
 
         updateTimeStepSize(field, params);
         veloctiyStarCalculator(field, params);
