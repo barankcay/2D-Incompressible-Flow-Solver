@@ -62,7 +62,7 @@ struct fields
     }
 };
 
-void initialization(fields &field, constParameters params)
+void initialization(fields &field, constParameters &params)
 {
     for (int i = 0; i < params.Nx; i++)
     {
@@ -71,11 +71,15 @@ void initialization(fields &field, constParameters params)
             field.u[j][i] = 0;
             field.v[j][i] = 0;
             field.p[j][i] = 0;
+            field.uStar[j][i] = 0;
+            field.vStar[j][i] = 0;
+            field.uNew[j][i] = 0;
+            field.vNew[j][i] = 0;
         }
     }
 }
 // function to create the coordinates of the nodes of cells
-void createCoordinatesXY(vector<vector<double>> &x, vector<vector<double>> &y, constParameters params)
+void createCoordinatesXY(vector<vector<double>> &x, vector<vector<double>> &y, constParameters &params)
 {
     for (int j = 0; j < params.Ny + 1; j++)
     {
@@ -88,7 +92,7 @@ void createCoordinatesXY(vector<vector<double>> &x, vector<vector<double>> &y, c
 }
 
 // function to create the coordinates of the cell centers
-void createCoordinatesXYM(vector<vector<double>> &xm, vector<vector<double>> &ym, constParameters params)
+void createCoordinatesXYM(vector<vector<double>> &xm, vector<vector<double>> &ym, constParameters &params)
 {
     for (int j = 0; j < params.Ny; j++)
     {
@@ -100,7 +104,7 @@ void createCoordinatesXYM(vector<vector<double>> &xm, vector<vector<double>> &ym
     }
 }
 
-void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters params)
+void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &params)
 {
     if (b == 0)
     {
@@ -149,7 +153,7 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters par
 }
 
 // function to calculate the first order partial derivative using central differencing
-double firstOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters params)
+double firstOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters &params)
 { // x and y are the direction of the derivative
     // i and j are the indices of the variable
     // if x = 1 and y = 0, then the derivative is in the x direction
@@ -160,7 +164,7 @@ double firstOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i, 
 }
 
 // function to calculate the second order partial derivative using central differencing
-double secondOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters params)
+double secondOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters &params)
 { // x and y are the direction of the derivative
     // i and j are the indices of the variable
     // if x = 1 and y = 0, then the derivative is in the x direction
@@ -170,7 +174,7 @@ double secondOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i,
     return pde;
 }
 
-double firstOrderPDEforwardDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters params)
+double firstOrderPDEforwardDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters &params)
 { // x and y are the direction of the derivative
     // i and j are the indices of the variable
     // if x = 1 and y = 0, then the derivative is in the x direction
@@ -180,7 +184,7 @@ double firstOrderPDEforwardDiff(vector<vector<double>> &variable, int j, int i, 
     return pde;
 }
 
-double firstOrderPDEbackwardDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters params)
+double firstOrderPDEbackwardDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters &params)
 { // x and y are the direction of the derivative
     // i and j are the indices of the variable
     // if x = 1 and y = 0, then the derivative is in the x direction
@@ -191,7 +195,7 @@ double firstOrderPDEbackwardDiff(vector<vector<double>> &variable, int j, int i,
 }
 
 // PREDICTOR STEP
-void veloctiyStarCalculator(fields &field, constParameters params)
+void veloctiyStarCalculator(fields &field, constParameters &params)
 {
     for (int i = 1; i < params.Nx - 1; i++)
     {
@@ -206,7 +210,7 @@ void veloctiyStarCalculator(fields &field, constParameters params)
 }
 // POISSON EQUATION SOLVER
 
-void poissonEquationSolver(fields &field, constParameters params)
+void poissonEquationSolver(fields &field, constParameters &params)
 {
     double residual = 1.0;
     int iteration = 0;
@@ -227,7 +231,7 @@ void poissonEquationSolver(fields &field, constParameters params)
     }
 }
 
-void updateTimeStepSize(fields &field, constParameters params)
+void updateTimeStepSize(fields &field, constParameters &params)
 {
     double maxVelocity = 0;
     for (int i = 0; i < params.Nx; i++)
@@ -245,7 +249,7 @@ void updateTimeStepSize(fields &field, constParameters params)
 }
 
 // CORRECTOR STEP
-void velocityCorrector(fields &field, constParameters params)
+void velocityCorrector(fields &field, constParameters &params)
 {
     for (int i = 1; i < params.Nx - 1; i++)
     {
@@ -257,7 +261,7 @@ void velocityCorrector(fields &field, constParameters params)
     }
 }
 
-void swapFields(fields &field, constParameters params)
+void swapFields(fields &field, constParameters &params)
 {
     for (int i = 0; i < params.Nx; i++)
     {
@@ -265,7 +269,6 @@ void swapFields(fields &field, constParameters params)
         {
             field.u[j][i] = field.uNew[j][i];
             field.v[j][i] = field.vNew[j][i];
-            field.p[j][i] = field.p[j][i];
             field.uStar[j][i] = field.u[j][i];
             field.vStar[j][i] = field.v[j][i];
         }
@@ -276,7 +279,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 1000;
+    params.courantNumber = 0.01;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
@@ -290,10 +293,10 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 32;
-    params.Ny = 32;
-    params.lengthX = 1;
-    params.lengthY = 1;
+    params.Nx = 40;
+    params.Ny = 40;
+    params.lengthX = 0.1;
+    params.lengthY = 0.1;
     params.hx = params.lengthX / (params.Nx);
     params.hy = params.lengthY / (params.Ny);
 
@@ -314,10 +317,11 @@ int main()
     setBoundaryConditions(1, field.u, params);
     setBoundaryConditions(2, field.v, params);
     setBoundaryConditions(0, field.p, params);
-    int count = 0;
+
     for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
     {
-        cout << (t / params.endTime) * 100 << " % calculated" << endl;
+        double completionPercent = t / params.endTime * 100;
+        cout << completionPercent << " % calculated" << endl;
 
         updateTimeStepSize(field, params);
         veloctiyStarCalculator(field, params);
@@ -327,25 +331,12 @@ int main()
         setBoundaryConditions(1, field.u, params);
         setBoundaryConditions(2, field.v, params);
         setBoundaryConditions(0, field.p, params);
-        if (count == params.numberOfTimeSteps - 1)
-        {
-            // for (int j = 0; j < params.Ny + 1; j++)
-            // {
-            //     for (int i = 0; i < params.Nx + 1; i++)
-            //     {
-            //         cout << field.x[j][i] << "," << field.y[j][i] << " ";
-            //     }
-            //     cout << endl;
-            // }
-
-            for (int j = 0; j < params.Ny + 1; j++)
-            {
-                cout << params.Ny - j << " " << field.x[j][(params.Nx) / 2] << ", " << field.y[j][(params.Nx) / 2] << ", " << field.u[j][(params.Nx) / 2] << endl;
-            }
-            cout << endl;
-        }
-        count++;
     }
+    for (int j = 0; j < params.Ny; j++)
+    {
+        cout << params.Ny - j << " " << field.x[j][(params.Nx) / 2] << ", " << field.y[j][(params.Nx) / 2] << ", " << field.u[j][(params.Nx) / 2] << endl;
+    }
+    cout << endl;
 
     cout << params.timeStepSize << endl;
     return 0;
