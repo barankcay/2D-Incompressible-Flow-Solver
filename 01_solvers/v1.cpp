@@ -123,8 +123,9 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
     {
         for (int j = params.Ny - 1; j >= 0; j--)
         {
-            M[j][0] = 2 * params.uLeftWall - M[j][1];
-            M[j][params.Nx - 1] = 2 * params.uRightWall - M[j][params.Nx - 2];
+            M[j][0] = 0;
+            M[j][1] = 0;
+            M[j][params.Nx - 1] = 0;
         }
         for (int i = params.Nx - 1; i >= 0; i--)
         {
@@ -141,8 +142,9 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
         }
         for (int i = params.Nx - 1; i >= 0; i--)
         {
-            M[0][i] = 2 * params.vTopWall - M[1][i];
-            M[params.Ny - 1][i] = 2 * params.vBottomWall - M[params.Ny - 2][i];
+            M[0][i] = 0;
+            M[params.Ny - 1][i] = 0;
+            M[params.Ny - 2][i] = 0;
         }
     }
 
@@ -279,22 +281,18 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 0.01;
+    params.courantNumber = 0.1;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
     params.uTopWall = 1;
     params.uBottomWall = 0.0;
-    params.uLeftWall = 0.0;
-    params.uRightWall = 0.0;
 
-    params.vTopWall = 0;
-    params.vBottomWall = 0.0;
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 40;
-    params.Ny = 40;
+    params.Nx = 20;
+    params.Ny = 20;
     params.lengthX = 0.1;
     params.lengthY = 0.1;
     params.hx = params.lengthX / (params.Nx);
@@ -334,7 +332,7 @@ int main()
     }
     for (int j = 0; j < params.Ny; j++)
     {
-        cout << params.Ny - j << " " << field.x[j][(params.Nx) / 2] << ", " << field.y[j][(params.Nx) / 2] << ", " << field.u[j][(params.Nx) / 2] << endl;
+        cout << params.Ny - j << " " << field.x[j][(params.Nx) / 2] << ", " << field.y[j][(params.Nx) / 2] << ", " << field.v[j][(params.Nx) / 2] << endl;
     }
     cout << endl;
 
