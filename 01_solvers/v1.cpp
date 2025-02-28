@@ -281,7 +281,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 0.1;
+    params.courantNumber = 1;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
@@ -291,12 +291,12 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 20;
-    params.Ny = 20;
+    params.Nx = 42;
+    params.Ny = 42;
     params.lengthX = 0.1;
     params.lengthY = 0.1;
-    params.hx = params.lengthX / (params.Nx);
-    params.hy = params.lengthY / (params.Ny);
+    params.hx = params.lengthX / (params.Nx - 2);
+    params.hy = params.lengthY / (params.Ny - 2);
 
     params.maxIterations = 1000;
     params.tolerance = 1e-6;
@@ -330,9 +330,9 @@ int main()
         setBoundaryConditions(2, field.v, params);
         setBoundaryConditions(0, field.p, params);
     }
-    for (int j = 0; j < params.Ny; j++)
+    for (int j = 1; j < params.Ny - 1; j++)
     {
-        cout << params.Ny - j << " " << field.x[j][(params.Nx) / 2] << ", " << field.y[j][(params.Nx) / 2] << ", " << field.v[j][(params.Nx) / 2] << endl;
+        cout << params.Ny - 1 - j << " " << field.x[j][(params.Nx) / 2] << ", " << field.u[j][(params.Nx / 2)] << ", " << field.v[j][(params.Nx) / 2] << endl;
     }
     cout << endl;
 
