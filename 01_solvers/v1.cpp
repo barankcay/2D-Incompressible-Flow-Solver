@@ -236,19 +236,39 @@ void poissonEquationSolver(fields &field, constParameters &params)
 
 void updateTimeStepSize(fields &field, constParameters &params)
 {
-    double maxVelocity = max(params.uTopWall, params.uBottomWall);
-    for (int i = 1; i < params.Nx - 1; i++)
+    double maxVelocity = 0.0;
+
+    // Calculate the maximum velocity in the domain (including boundaries)
+    for (int i = 0; i < params.Nx; i++)
     {
-        for (int j = 1; j < params.Ny - 1; j++)
+        for (int j = 0; j < params.Ny; j++)
         {
             double velocity = sqrt(pow(field.u[j][i], 2) + pow(field.v[j][i], 2));
-            if (velocity >= maxVelocity)
+            if (velocity > maxVelocity)
             {
                 maxVelocity = velocity;
             }
         }
     }
-    params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / maxVelocity;
+
+    // Handle the case where maxVelocity is zero (initial time step)
+    if (maxVelocity == 0.0)
+    {
+        // Set a default time step size based on the grid spacing and Courant number
+        params.timeStepSize = params.courantNumber * min(params.hx, params.hy);
+    }
+    else
+    {
+        // Calculate the time step size based on the maximum velocity
+        params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / maxVelocity;
+    }
+
+    // Enforce a minimum time step size
+    double minTimeStep = 1e-6; // Set a minimum time step size
+    if (params.timeStepSize < minTimeStep)
+    {
+        params.timeStepSize = minTimeStep;
+    }
 }
 
 // CORRECTOR STEP
@@ -282,7 +302,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 1;
+    params.courantNumber = 0.1;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
@@ -303,7 +323,7 @@ int main()
     params.tolerance = 1e-6;
 
     params.startTime = 0;
-    params.endTime = 10;
+    params.endTime = 5;
 
     fields field(params.Nx, params.Ny);
 
@@ -334,7 +354,7 @@ int main()
     for (int j = 0; j < params.Ny - 2; j++)
     {
 
-        cout << params.Ny - 2 - j << " " << field.x[j][(params.Nx - 2) / 2] << ", " << field.ym[j][(params.Nx / 2)] << ", " << field.u[j + 1][(params.Nx) / 2] << endl;
+        cout << params.Ny - 2 - j << " " << field.x[j][(params.Nx - 2) / 2] << ", " << field.ym[j][(params.Nx / 2)] << ", " << 0.5 * (field.u[j + 1][((params.Nx) - 1) / 2] + field.u[j + 1][((params.Nx) + 1) / 2]) << endl;
     }
     cout << endl;
 
