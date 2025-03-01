@@ -48,10 +48,10 @@ struct fields
 
     fields(int Nx, int Ny)
     {
-        x.resize(Ny + 1, vector<double>(Nx + 1));
-        y.resize(Ny + 1, vector<double>(Nx + 1));
-        xm.resize(Ny, vector<double>(Nx));
-        ym.resize(Ny, vector<double>(Nx));
+        x.resize(Ny - 1, vector<double>(Nx - 1));
+        y.resize(Ny - 1, vector<double>(Nx - 1));
+        xm.resize(Ny - 2, vector<double>(Nx - 2));
+        ym.resize(Ny - 2, vector<double>(Nx - 2));
         u.resize(Ny, vector<double>(Nx));
         uStar.resize(Ny, vector<double>(Nx));
         uNew.resize(Ny, vector<double>(Nx));
@@ -81,9 +81,9 @@ void initialization(fields &field, constParameters &params)
 // function to create the coordinates of the nodes of cells
 void createCoordinatesXY(vector<vector<double>> &x, vector<vector<double>> &y, constParameters &params)
 {
-    for (int j = 0; j < params.Ny + 1; j++)
+    for (int j = 0; j < params.Ny - 1; j++)
     {
-        for (int i = 0; i < params.Nx + 1; i++)
+        for (int i = 0; i < params.Nx - 1; i++)
         {
             x[j][i] = i * params.hx;
             y[j][i] = (params.Ny - j) * params.hy;
@@ -94,12 +94,13 @@ void createCoordinatesXY(vector<vector<double>> &x, vector<vector<double>> &y, c
 // function to create the coordinates of the cell centers
 void createCoordinatesXYM(vector<vector<double>> &xm, vector<vector<double>> &ym, constParameters &params)
 {
-    for (int j = 0; j < params.Ny; j++)
+    for (int j = 0; j < params.Ny - 2; j++)
     {
-        for (int i = 0; i < params.Nx; i++)
+        for (int i = 0; i < params.Nx - 2; i++)
         {
             xm[j][i] = params.hx / 2 + i * params.hx;
-            ym[j][i] = params.hy / 2 + (params.Ny - 1 - j) * params.hy;
+
+            ym[j][i] = params.hy / 2 + (params.Ny - 3 - j) * params.hy;
         }
     }
 }
@@ -235,13 +236,13 @@ void poissonEquationSolver(fields &field, constParameters &params)
 
 void updateTimeStepSize(fields &field, constParameters &params)
 {
-    double maxVelocity = 0;
-    for (int i = 0; i < params.Nx; i++)
+    double maxVelocity = max(params.uTopWall, params.uBottomWall);
+    for (int i = 1; i < params.Nx - 1; i++)
     {
-        for (int j = 0; j < params.Ny; j++)
+        for (int j = 1; j < params.Ny - 1; j++)
         {
             double velocity = sqrt(pow(field.u[j][i], 2) + pow(field.v[j][i], 2));
-            if (velocity > maxVelocity)
+            if (velocity >= maxVelocity)
             {
                 maxVelocity = velocity;
             }
@@ -291,10 +292,10 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 42;
-    params.Ny = 42;
-    params.lengthX = 0.1;
-    params.lengthY = 0.1;
+    params.Nx = 131;
+    params.Ny = 131;
+    params.lengthX = 1;
+    params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx - 2);
     params.hy = params.lengthY / (params.Ny - 2);
 
@@ -302,7 +303,7 @@ int main()
     params.tolerance = 1e-6;
 
     params.startTime = 0;
-    params.endTime = 0.5;
+    params.endTime = 10;
 
     fields field(params.Nx, params.Ny);
 
@@ -330,9 +331,10 @@ int main()
         setBoundaryConditions(2, field.v, params);
         setBoundaryConditions(0, field.p, params);
     }
-    for (int j = 1; j < params.Ny - 1; j++)
+    for (int j = 0; j < params.Ny - 2; j++)
     {
-        cout << params.Ny - 1 - j << " " << field.x[j][(params.Nx) / 2] << ", " << field.u[j][(params.Nx / 2)] << ", " << field.v[j][(params.Nx) / 2] << endl;
+
+        cout << params.Ny - 2 - j << " " << field.x[j][(params.Nx - 2) / 2] << ", " << field.ym[j][(params.Nx / 2)] << ", " << field.u[j + 1][(params.Nx) / 2] << endl;
     }
     cout << endl;
 
