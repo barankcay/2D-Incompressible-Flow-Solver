@@ -302,7 +302,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 0.1;
+    params.courantNumber = 0.01;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
