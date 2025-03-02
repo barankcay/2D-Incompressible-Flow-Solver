@@ -262,13 +262,6 @@ void updateTimeStepSize(fields &field, constParameters &params)
         // Calculate the time step size based on the maximum velocity
         params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / maxVelocity;
     }
-
-    // Enforce a minimum time step size
-    double minTimeStep = 1e-6; // Set a minimum time step size
-    if (params.timeStepSize < minTimeStep)
-    {
-        params.timeStepSize = minTimeStep;
-    }
 }
 
 // CORRECTOR STEP
@@ -302,7 +295,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 0.01;
+    params.courantNumber = 1;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
