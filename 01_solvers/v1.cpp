@@ -271,8 +271,8 @@ void velocityCorrector(fields &field, constParameters &params)
     {
         for (int j = 1; j < params.Ny - 1; j++)
         {
-            field.uNew[j][i] = field.uStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEbackwardDiff(field.p, j, i, 1, 0, params));
-            field.vNew[j][i] = field.vStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEbackwardDiff(field.p, j, i, 0, 1, params));
+            field.uNew[j][i] = field.uStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEcentralDiff(field.p, j, i, 1, 0, params));
+            field.vNew[j][i] = field.vStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEcentralDiff(field.p, j, i, 0, 1, params));
         }
     }
 }
@@ -295,7 +295,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 0.05;
+    params.courantNumber = 0.1;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
@@ -305,10 +305,10 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 42;
-    params.Ny = 42;
-    params.lengthX = 0.1;
-    params.lengthY = 0.1;
+    params.Nx = 131;
+    params.Ny = 131;
+    params.lengthX = 1;
+    params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx - 2);
     params.hy = params.lengthY / (params.Ny - 2);
 
@@ -316,7 +316,7 @@ int main()
     params.tolerance = 1e-6;
 
     params.startTime = 0;
-    params.endTime = 0.5;
+    params.endTime = 5;
 
     fields field(params.Nx, params.Ny);
 
@@ -346,8 +346,8 @@ int main()
     }
     for (int j = 0; j < params.Ny - 2; j++)
     {
-
-        cout << params.Ny - 2 - j << " " << field.x[j][(params.Nx - 2) / 2] << ", " << field.ym[j][(params.Nx / 2)] << ", " << (field.u[j + 1][(params.Nx) / 2]) << endl;
+        cout << params.Ny - 2 - j << " " << field.x[j][(params.Nx - 2) / 2] << ", " << field.ym[j][(params.Nx / 2)] << ", " << 0.5 * (field.u[j + 1][((params.Nx) - 1) / 2] + field.u[j + 1][((params.Nx) + 1) / 2]) << endl;
+        // cout << params.Ny - 2 - j << " " << field.x[j][(params.Nx - 2) / 2] << ", " << field.ym[j][(params.Nx / 2)] << ", " << (field.u[j + 1][(params.Nx) / 2]) << endl;
     }
     cout << endl;
 
