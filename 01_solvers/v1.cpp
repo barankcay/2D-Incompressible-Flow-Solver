@@ -162,7 +162,7 @@ double firstOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i, 
     // if x = 1 and y = 0, then the derivative is in the x direction
     // if x = 0 and y = 1, then the derivative is in the y direction
     double pde;
-    pde = (variable[j + y][i + x] - variable[j - y][i - x]) / (x * params.hx + y * params.hy);
+    pde = (variable[j - y][i + x] - variable[j + y][i - x]) / (x * params.hx + y * params.hy);
     return pde;
 }
 
@@ -173,7 +173,7 @@ double secondOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i,
     // if x = 1 and y = 0, then the derivative is in the x direction
     // if x = 0 and y = 1, then the derivative is in the y direction
     double pde;
-    pde = (variable[j + y][i + x] - 2 * variable[j][i] + variable[j - y][i - x]) / pow((x * params.hx + y * params.hy), 2);
+    pde = (variable[j - y][i + x] - 2 * variable[j][i] + variable[j + y][i - x]) / pow((x * params.hx + y * params.hy), 2);
     return pde;
 }
 
@@ -183,7 +183,7 @@ double firstOrderPDEforwardDiff(vector<vector<double>> &variable, int j, int i, 
     // if x = 1 and y = 0, then the derivative is in the x direction
     // if x = 0 and y = 1, then the derivative is in the y direction
     double pde;
-    pde = (variable[j + y][i + x] - variable[j][i]) / (x * params.hx + y * params.hy);
+    pde = (variable[j - y][i + x] - variable[j][i]) / (x * params.hx + y * params.hy);
     return pde;
 }
 
@@ -193,7 +193,7 @@ double firstOrderPDEbackwardDiff(vector<vector<double>> &variable, int j, int i,
     // if x = 1 and y = 0, then the derivative is in the x direction
     // if x = 0 and y = 1, then the derivative is in the y direction
     double pde;
-    pde = (variable[j][i] - variable[j - y][i - x]) / (x * params.hx + y * params.hy);
+    pde = (variable[j][i] - variable[j + y][i - x]) / (x * params.hx + y * params.hy);
     return pde;
 }
 
@@ -295,7 +295,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 1;
+    params.courantNumber = 0.05;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
@@ -305,10 +305,10 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 131;
-    params.Ny = 131;
-    params.lengthX = 1;
-    params.lengthY = 1;
+    params.Nx = 42;
+    params.Ny = 42;
+    params.lengthX = 0.1;
+    params.lengthY = 0.1;
     params.hx = params.lengthX / (params.Nx - 2);
     params.hy = params.lengthY / (params.Ny - 2);
 
@@ -316,7 +316,7 @@ int main()
     params.tolerance = 1e-6;
 
     params.startTime = 0;
-    params.endTime = 5;
+    params.endTime = 0.5;
 
     fields field(params.Nx, params.Ny);
 
@@ -347,7 +347,7 @@ int main()
     for (int j = 0; j < params.Ny - 2; j++)
     {
 
-        cout << params.Ny - 2 - j << " " << field.x[j][(params.Nx - 2) / 2] << ", " << field.ym[j][(params.Nx / 2)] << ", " << 0.5 * (field.u[j + 1][((params.Nx) - 1) / 2] + field.u[j + 1][((params.Nx) + 1) / 2]) << endl;
+        cout << params.Ny - 2 - j << " " << field.x[j][(params.Nx - 2) / 2] << ", " << field.ym[j][(params.Nx / 2)] << ", " << (field.u[j + 1][(params.Nx) / 2]) << endl;
     }
     cout << endl;
 
