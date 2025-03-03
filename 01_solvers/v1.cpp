@@ -311,7 +311,7 @@ int main()
     constParameters params;
     params.courantNumber = 0.25;
     params.density = 1.0;
-    params.kinematicViscosity = 0.0025;
+    params.kinematicViscosity = 0.0003125;
 
     params.uTopWall = 1;
     params.uBottomWall = 0.0;
