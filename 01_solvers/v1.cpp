@@ -27,7 +27,8 @@ struct constParameters
     double vLeftWall;
     double vRightWall;
     double courantNumber;
-    double tolerance;
+    double poissonTolerance;
+    double timeTolerance;
     int maxIterations;
     int numberOfTimeSteps;
 };
@@ -217,7 +218,7 @@ void poissonEquationSolver(fields &field, constParameters &params)
 {
     double residual = 1.0;
     int iteration = 0;
-    while (residual > params.tolerance && iteration < params.maxIterations)
+    while (residual > params.poissonTolerance && iteration < params.maxIterations)
     {
         residual = 0;
         for (int i = 1; i < params.Nx - 1; i++)
@@ -277,6 +278,19 @@ void velocityCorrector(fields &field, constParameters &params)
     }
 }
 
+double checkConvergence(vector<vector<double>> &Mnew, vector<vector<double>> &Mold, constParameters &params)
+{
+    double residual = 0.0;
+    for (int i = 1; i < params.Nx - 1; i++)
+    {
+        for (int j = 1; j < params.Ny - 1; j++)
+        {
+            residual += abs(Mnew[j][i] - Mold[j][i]);
+        }
+    }
+    return residual /= params.Nx * params.Ny;
+}
+
 void swapFields(fields &field, constParameters &params)
 {
     for (int i = 0; i < params.Nx; i++)
@@ -295,7 +309,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 0.1;
+    params.courantNumber = 1;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
@@ -313,10 +327,11 @@ int main()
     params.hy = params.lengthY / (params.Ny - 2);
 
     params.maxIterations = 1000;
-    params.tolerance = 1e-6;
+    params.poissonTolerance = 1e-6;
+    params.timeTolerance = 1e-4;
 
     params.startTime = 0;
-    params.endTime = 5;
+    params.endTime = 100;
 
     fields field(params.Nx, params.Ny);
 
@@ -332,14 +347,24 @@ int main()
 
     for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
     {
-        double completionPercent = t / params.endTime * 100;
-        cout << completionPercent << " % calculated" << endl;
 
+        vector<vector<double>> pPrev = field.p;
         updateTimeStepSize(field, params);
         veloctiyStarCalculator(field, params);
         poissonEquationSolver(field, params);
         velocityCorrector(field, params);
-        swapFields(field, params);
+        double residualU = checkConvergence(field.uNew, field.u, params);
+        double residualV = checkConvergence(field.vNew, field.v, params);
+        double residualP = checkConvergence(field.p, pPrev, params);
+
+        cout << "Time: " << t << " Residual U: " << residualU << " Residual V: " << residualV << " Residual P: " << residualP << endl;
+        if (residualU < params.timeTolerance && residualV < params.timeTolerance && residualP < params.timeTolerance)
+        {
+            cout << "Converged at time: " << t << endl;
+            break;
+        }
+
+         swapFields(field, params);
         setBoundaryConditions(1, field.u, params);
         setBoundaryConditions(2, field.v, params);
         setBoundaryConditions(0, field.p, params);
@@ -351,6 +376,6 @@ int main()
     }
     cout << endl;
 
-    cout << params.timeStepSize << endl;
+    // cout << params.timeStepSize << endl;
     return 0;
 }
