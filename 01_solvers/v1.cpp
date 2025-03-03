@@ -163,7 +163,7 @@ double firstOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i, 
     // if x = 1 and y = 0, then the derivative is in the x direction
     // if x = 0 and y = 1, then the derivative is in the y direction
     double pde;
-    pde = (variable[j - y][i + x] - variable[j + y][i - x]) / (2*(x * params.hx + y * params.hy));
+    pde = (variable[j - y][i + x] - variable[j + y][i - x]) / (2 * (x * params.hx + y * params.hy));
     return pde;
 }
 
@@ -230,7 +230,7 @@ void poissonEquationSolver(fields &field, constParameters &params)
                 residual += abs(field.p[j][i] - pOld);
             }
         }
-        residual /= params.Nx * params.Ny;
+        residual /= (params.Nx * params.Ny);
         iteration++;
     }
 }
@@ -288,7 +288,7 @@ double checkConvergence(vector<vector<double>> &Mnew, vector<vector<double>> &Mo
             residual += abs(Mnew[j][i] - Mold[j][i]);
         }
     }
-    return residual /= params.Nx * params.Ny;
+    return residual /= (params.Nx * params.Ny);
 }
 
 void swapFields(fields &field, constParameters &params)
@@ -309,7 +309,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 1;
+    params.courantNumber = 0.25;
     params.density = 1.0;
     params.kinematicViscosity = 0.01;
 
@@ -328,7 +328,7 @@ int main()
 
     params.maxIterations = 1000;
     params.poissonTolerance = 1e-6;
-    params.timeTolerance = 1e-4;
+    params.timeTolerance = 1e-6;
 
     params.startTime = 0;
     params.endTime = 100;
@@ -349,25 +349,27 @@ int main()
     {
 
         vector<vector<double>> pPrev = field.p;
+        vector<vector<double>> uPrev = field.u;
+        vector<vector<double>> vPrev = field.v;
         updateTimeStepSize(field, params);
         veloctiyStarCalculator(field, params);
         poissonEquationSolver(field, params);
         velocityCorrector(field, params);
-        double residualU = checkConvergence(field.uNew, field.u, params);
-        double residualV = checkConvergence(field.vNew, field.v, params);
+
+        swapFields(field, params);
+        setBoundaryConditions(1, field.u, params);
+        setBoundaryConditions(2, field.v, params);
+        setBoundaryConditions(0, field.p, params);
+        double residualU = checkConvergence(field.u, uPrev, params);
+        double residualV = checkConvergence(field.v, vPrev, params);
         double residualP = checkConvergence(field.p, pPrev, params);
 
-        cout << "Time: " << t << " Residual U: " << residualU << " Residual V: " << residualV << " Residual P: " << residualP << endl;
+        cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << endl;
         if (residualU < params.timeTolerance && residualV < params.timeTolerance && residualP < params.timeTolerance)
         {
             cout << "Converged at time: " << t << endl;
             break;
         }
-
-         swapFields(field, params);
-        setBoundaryConditions(1, field.u, params);
-        setBoundaryConditions(2, field.v, params);
-        setBoundaryConditions(0, field.p, params);
     }
     for (int j = 0; j < params.Ny - 2; j++)
     {
