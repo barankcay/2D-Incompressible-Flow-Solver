@@ -163,7 +163,7 @@ double firstOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i, 
     // if x = 1 and y = 0, then the derivative is in the x direction
     // if x = 0 and y = 1, then the derivative is in the y direction
     double pde;
-    pde = (variable[j - y][i + x] - variable[j + y][i - x]) / (x * params.hx + y * params.hy);
+    pde = (variable[j - y][i + x] - variable[j + y][i - x]) / (2*(x * params.hx + y * params.hy));
     return pde;
 }
 
