@@ -311,7 +311,7 @@ int main()
     constParameters params;
     params.courantNumber = 0.25;
     params.density = 1.0;
-    params.kinematicViscosity = 0.0003125;
+    params.kinematicViscosity = 0.0002;
 
     params.uTopWall = 1;
     params.uBottomWall = 0.0;
@@ -331,7 +331,7 @@ int main()
     params.timeTolerance = 1e-6;
 
     params.startTime = 0;
-    params.endTime = 100;
+    params.endTime = 1000;
 
     fields field(params.Nx, params.Ny);
 
