@@ -311,7 +311,7 @@ int main()
     constParameters params;
     params.courantNumber = 0.25;
     params.density = 1.0;
-    params.kinematicViscosity = 0.0002;
+    params.kinematicViscosity = 0.001;
 
     params.uTopWall = 1;
     params.uBottomWall = 0.0;
@@ -319,19 +319,19 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 131;
-    params.Ny = 131;
+    params.Nx = 160;
+    params.Ny = 160;
     params.lengthX = 1;
     params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx - 2);
     params.hy = params.lengthY / (params.Ny - 2);
 
     params.maxIterations = 1000;
-    params.poissonTolerance = 1e-6;
-    params.timeTolerance = 1e-6;
+    params.poissonTolerance = 1e-9;
+    params.timeTolerance = 1e-9;
 
     params.startTime = 0;
-    params.endTime = 1000;
+    params.endTime = 10000;
 
     fields field(params.Nx, params.Ny);
 
@@ -373,8 +373,8 @@ int main()
     }
     for (int j = 0; j < params.Ny - 2; j++)
     {
-        cout << params.Ny - 2 - j << " " << field.x[j][(params.Nx - 2) / 2] << ", " << field.ym[j][(params.Nx / 2)] << ", " << 0.5 * (field.u[j + 1][((params.Nx) - 1) / 2] + field.u[j + 1][((params.Nx) + 1) / 2]) << endl;
-        // cout << params.Ny - 2 - j << " " << field.x[j][(params.Nx - 2) / 2] << ", " << field.ym[j][(params.Nx / 2)] << ", " << (field.u[j + 1][(params.Nx) / 2]) << endl;
+
+        cout << params.Ny - 2 - j << " " << field.x[j][(params.Nx - 2) / 2] << ", " << field.ym[j][(params.Nx / 2)] << ", " << (field.u[j + 1][(params.Nx) / 2]) << endl;
     }
     cout << endl;
 
