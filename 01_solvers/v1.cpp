@@ -327,8 +327,8 @@ int main()
     params.hy = params.lengthY / (params.Ny - 2);
 
     params.maxIterations = 1000;
-    params.poissonTolerance = 1e-9;
-    params.timeTolerance = 1e-9;
+    params.poissonTolerance = 1e-11;
+    params.timeTolerance = 1e-11;
 
     params.startTime = 0;
     params.endTime = 10000;
