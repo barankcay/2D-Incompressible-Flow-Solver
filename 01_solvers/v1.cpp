@@ -309,7 +309,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 0.25;
+    params.courantNumber = 0.05;
     params.density = 1.0;
     params.kinematicViscosity = 0.001;
 
@@ -319,8 +319,8 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 160;
-    params.Ny = 160;
+    params.Nx = 102;
+    params.Ny = 102;
     params.lengthX = 1;
     params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx - 2);
