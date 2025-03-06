@@ -18,7 +18,7 @@ struct constParameters
     double timeStepSize;
     double kinematicViscosity;
     double density;
-
+    double pTopwall;
     double uTopWall;
     double uBottomWall;
     double uLeftWall;
@@ -53,7 +53,7 @@ struct fields
     {
         x.resize(Nx - 1);
         y.resize(Ny - 1);
-        xm.resize(Nx - 2);
+        xm.resize(Ny - 2);
         ym.resize(Ny - 2);
         u.resize(Ny, vector<double>(Nx));
         uStar.resize(Ny, vector<double>(Nx));
@@ -119,7 +119,7 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
         }
         for (int i = params.Nx - 1; i >= 0; i--)
         {
-            M[0][i] = M[1][i];
+            M[0][i] = 2 * params.pTopwall - M[1][i];
             M[params.Ny - 1][i] = M[params.Ny - 2][i];
         }
     }
@@ -314,6 +314,8 @@ int main()
     params.courantNumber = 0.5;
     params.density = 1.0;
     params.kinematicViscosity = 0.001;
+
+    params.pTopwall = 0.0;
 
     params.uTopWall = 1;
     params.uBottomWall = 0.0;
