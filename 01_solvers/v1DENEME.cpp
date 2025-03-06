@@ -18,7 +18,7 @@ struct constParameters
     double timeStepSize;
     double kinematicViscosity;
     double density;
-    double pTopwall;
+
     double uTopWall;
     double uBottomWall;
     double uLeftWall;
@@ -53,7 +53,7 @@ struct fields
     {
         x.resize(Nx - 1);
         y.resize(Ny - 1);
-        xm.resize(Ny - 2);
+        xm.resize(Nx - 2);
         ym.resize(Ny - 2);
         u.resize(Ny, vector<double>(Nx));
         uStar.resize(Ny, vector<double>(Nx));
@@ -119,7 +119,7 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
         }
         for (int i = params.Nx - 1; i >= 0; i--)
         {
-            M[0][i] = 2 * params.pTopwall - M[1][i];
+            M[0][i] = M[1][i];
             M[params.Ny - 1][i] = M[params.Ny - 2][i];
         }
     }
@@ -274,8 +274,8 @@ void velocityCorrector(fields &field, constParameters &params)
     {
         for (int j = 1; j < params.Ny - 1; j++)
         {
-            field.uNew[j][i] = field.uStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEbackwardDiff(field.p, j, i, 1, 0, params));
-            field.vNew[j][i] = field.vStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEbackwardDiff(field.p, j, i, 0, 1, params));
+            field.uNew[j][i] = field.uStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEcentralDiff(field.p, j, i, 1, 0, params));
+            field.vNew[j][i] = field.vStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEcentralDiff(field.p, j, i, 0, 1, params));
         }
     }
 }
@@ -311,11 +311,9 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 0.5;
+    params.courantNumber = 0.1;
     params.density = 1.0;
     params.kinematicViscosity = 0.001;
-
-    params.pTopwall = 0.0;
 
     params.uTopWall = 1;
     params.uBottomWall = 0.0;
@@ -330,16 +328,17 @@ int main()
     params.hx = params.lengthX / (params.Nx - 2);
     params.hy = params.lengthY / (params.Ny - 2);
 
-    params.maxIterations = 1000;
+    params.maxIterations = 2000;
     params.poissonTolerance = 1e-11;
     params.timeTolerance = 1e-11;
 
     params.startTime = 0;
-    params.endTime = 10000;
+    params.endTime = 1000;
 
     fields field(params.Nx, params.Ny);
 
     params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / params.uTopWall;
+    // params.timeStepSize = 0.001;
     params.numberOfTimeSteps = (params.endTime - params.startTime) / params.timeStepSize;
     initialization(field, params);
     createCoordinatesXY(field.x, field.y, params);
