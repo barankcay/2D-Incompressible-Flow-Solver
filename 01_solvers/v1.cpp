@@ -139,16 +139,17 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
     }
     if (b == 2)
     {
-        for (int j = params.Ny - 1; j >= 0; j--)
-        {
-            M[j][0] = 2 * params.vLeftWall - M[j][1];
-            M[j][params.Nx - 1] = 2 * params.vRightWall - M[j][params.Nx - 2];
-        }
+
         for (int i = params.Nx - 1; i >= 0; i--)
         {
             M[0][i] = 0;
             M[params.Ny - 1][i] = 0;
             M[params.Ny - 2][i] = 0;
+        }
+        for (int j = params.Ny - 1; j >= 0; j--)
+        {
+            M[j][0] = 2 * params.vLeftWall - M[j][1];
+            M[j][params.Nx - 1] = 2 * params.vRightWall - M[j][params.Nx - 2];
         }
     }
 
@@ -311,7 +312,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 0.5;
+    params.courantNumber = 0.2;
     params.density = 1.0;
     params.kinematicViscosity = 0.001;
 
