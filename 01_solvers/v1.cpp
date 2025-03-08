@@ -221,7 +221,7 @@ void poissonEquationSolver(fields &field, constParameters &params)
 {
     double residual = 1.0;
     int iteration = 0;
-    while (residual > params.poissonTolerance && iteration < params.maxIterations)
+    while (residual > params.poissonTolerance)
     {
         residual = 0;
         for (int i = 1; i < params.Nx - 1; i++)
@@ -229,7 +229,7 @@ void poissonEquationSolver(fields &field, constParameters &params)
             for (int j = 1; j < params.Ny - 1; j++)
             {
                 double pOld = field.p[j][i];
-                field.p[j][i] = (pow(params.hx, 2) * pow(params.hx, 2) / (2 * (pow(params.hx, 2) + pow(params.hy, 2)))) * (((field.p[j][i + 1] + field.p[j][i - 1]) / pow(params.hx, 2)) + ((field.p[j - 1][i] + field.p[j + 1][i]) / pow(params.hy, 2)) - ((params.density / params.timeStepSize) * (firstOrderPDEforwardDiff(field.uStar, j, i, 1, 0, params) + firstOrderPDEforwardDiff(field.vStar, j, i, 0, 1, params))));
+                field.p[j][i] = (pow(params.hy, 2) * pow(params.hx, 2) / (2 * (pow(params.hx, 2) + pow(params.hy, 2)))) * (((field.p[j][i + 1] + field.p[j][i - 1]) / pow(params.hx, 2)) + ((field.p[j - 1][i] + field.p[j + 1][i]) / pow(params.hy, 2)) - ((params.density / params.timeStepSize) * (firstOrderPDEforwardDiff(field.uStar, j, i, 1, 0, params) + firstOrderPDEforwardDiff(field.vStar, j, i, 0, 1, params))));
                 residual += abs(field.p[j][i] - pOld);
             }
         }
@@ -334,11 +334,12 @@ int main()
     params.timeTolerance = 1e-11;
 
     params.startTime = 0;
-    params.endTime = 10000;
+    params.endTime = 200;
 
     fields field(params.Nx, params.Ny);
 
-    params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / params.uTopWall;
+    // params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / params.uTopWall;
+    params.timeStepSize = 0.001;
     params.numberOfTimeSteps = (params.endTime - params.startTime) / params.timeStepSize;
     initialization(field, params);
     createCoordinatesXY(field.x, field.y, params);
@@ -354,7 +355,7 @@ int main()
         vector<vector<double>> pPrev = field.p;
         vector<vector<double>> uPrev = field.u;
         vector<vector<double>> vPrev = field.v;
-        updateTimeStepSize(field, params);
+        // updateTimeStepSize(field, params);
         veloctiyStarCalculator(field, params);
         poissonEquationSolver(field, params);
         velocityCorrector(field, params);
@@ -368,16 +369,16 @@ int main()
         double residualP = checkConvergence(field.p, pPrev, params);
 
         cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << endl;
-        if (residualU < params.timeTolerance && residualV < params.timeTolerance && residualP < params.timeTolerance)
-        {
-            cout << "Converged at time: " << t << endl;
-            break;
-        }
+        // if (residualU < params.timeTolerance && residualV < params.timeTolerance && residualP < params.timeTolerance)
+        //{
+        // cout << "Converged at time: " << t << endl;
+        // break;
+        //}
     }
     for (int j = 0; j < params.Ny - 2; j++)
     {
 
-        cout << params.Ny - 2 - j << " " << field.x[(params.Nx - 2) / 2] << ", " << field.ym[j] << ", " << (field.u[j + 1][(params.Nx) / 2]) << endl;
+        cout << setprecision(20) << field.ym[j] << " " << (field.u[j + 1][(params.Nx) / 2]) << endl;
     }
     cout << endl;
 
