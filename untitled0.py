@@ -14,7 +14,7 @@ codeCoord=kod[:,0]
 codeCSVeloc=kodCS[:,1]
 codeCSCoord=kodCS[:,0]
 
-plt.figure(figsize=(4,4))
+# plt.figure(figsize=(4,4))
 plt.grid()
 plt.plot(codeVeloc,codeCoord,linestyle="-",linewidth=1,label="Code",color="red")
 plt.plot(ghiaVeloc,ghiaCoord,"o",color="black")

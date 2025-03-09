@@ -232,11 +232,11 @@ void poissonEquationSolver(fields &field, constParameters &params)
                 residual += abs(field.p[j][i] - pOld);
             }
         }
-
+        setBoundaryConditions(0, field.p, params);
         residual /= (params.Nx * params.Ny);
         iteration++;
     }
-    setBoundaryConditions(0, field.p, params);
+
     cout << "Number of iterations: " << iteration << endl;
 }
 
@@ -277,8 +277,8 @@ void velocityCorrector(fields &field, constParameters &params)
     {
         for (int j = 1; j < params.Ny - 1; j++)
         {
-            field.uNew[j][i] = field.uStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEcentralDiff(field.p, j, i, 1, 0, params));
-            field.vNew[j][i] = field.vStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEcentralDiff(field.p, j, i, 0, 1, params));
+            field.uNew[j][i] = field.uStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEbackwardDiff(field.p, j, i, 1, 0, params));
+            field.vNew[j][i] = field.vStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEbackwardDiff(field.p, j, i, 0, 1, params));
         }
     }
 }
@@ -324,8 +324,8 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 122;
-    params.Ny = 122;
+    params.Nx = 162;
+    params.Ny = 162;
     params.lengthX = 1;
     params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx - 2);
