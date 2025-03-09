@@ -123,7 +123,7 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
             M[params.Ny - 1][i] = M[params.Ny - 2][i];
         }
     }
-    if (b == 1)
+    else if (b == 1)
     {
         for (int j = params.Ny - 1; j >= 0; j--)
         {
@@ -137,7 +137,7 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
             M[params.Ny - 1][i] = 2 * params.uBottomWall - M[params.Ny - 2][i];
         }
     }
-    if (b == 2)
+    else if (b == 2)
     {
 
         for (int i = params.Nx - 1; i >= 0; i--)
@@ -153,12 +153,11 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
         }
     }
 
-    M[0][0] = 0.5 * (M[1][0] + M[0][1]);
+    M[0][0] = 0.5 * (M[0][1] + M[1][0]);
     M[0][params.Nx - 1] = 0.5 * (M[0][params.Nx - 2] + M[1][params.Nx - 1]);
     M[params.Ny - 1][0] = 0.5 * (M[params.Ny - 2][0] + M[params.Ny - 1][1]);
-    M[params.Ny - 1][params.Nx - 1] = 0.5 * (M[params.Ny - 2][params.Nx - 1] + M[params.Ny - 1][params.Nx - 2]);
+    M[params.Ny - 1][params.Nx - 1] = 0.5 * (M[params.Ny - 1][params.Nx - 2] + M[params.Ny - 2][params.Nx - 1]);
 }
-
 // function to calculate the first order partial derivative using central differencing
 double firstOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters &params)
 { // x and y are the direction of the derivative
@@ -233,9 +232,12 @@ void poissonEquationSolver(fields &field, constParameters &params)
                 residual += abs(field.p[j][i] - pOld);
             }
         }
+
         residual /= (params.Nx * params.Ny);
         iteration++;
     }
+    setBoundaryConditions(0, field.p, params);
+    cout << "Number of iterations: " << iteration << endl;
 }
 
 void updateTimeStepSize(fields &field, constParameters &params)
@@ -275,8 +277,8 @@ void velocityCorrector(fields &field, constParameters &params)
     {
         for (int j = 1; j < params.Ny - 1; j++)
         {
-            field.uNew[j][i] = field.uStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEbackwardDiff(field.p, j, i, 1, 0, params));
-            field.vNew[j][i] = field.vStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEbackwardDiff(field.p, j, i, 0, 1, params));
+            field.uNew[j][i] = field.uStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEcentralDiff(field.p, j, i, 1, 0, params));
+            field.vNew[j][i] = field.vStar[j][i] - (params.timeStepSize / params.density) * (firstOrderPDEcentralDiff(field.p, j, i, 0, 1, params));
         }
     }
 }
@@ -312,7 +314,7 @@ int main()
 {
 
     constParameters params;
-    params.courantNumber = 0.2;
+    // params.courantNumber = 0.2;
     params.density = 1.0;
     params.kinematicViscosity = 0.001;
 
@@ -322,19 +324,19 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 102;
-    params.Ny = 102;
+    params.Nx = 122;
+    params.Ny = 122;
     params.lengthX = 1;
     params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx - 2);
     params.hy = params.lengthY / (params.Ny - 2);
 
-    params.maxIterations = 1000;
-    params.poissonTolerance = 1e-11;
-    params.timeTolerance = 1e-11;
+    // params.maxIterations = 1000;
+    params.poissonTolerance = 1e-6;
+    // params.timeTolerance = 1e-13;
 
     params.startTime = 0;
-    params.endTime = 200;
+    params.endTime = 342;
 
     fields field(params.Nx, params.Ny);
 
@@ -348,8 +350,8 @@ int main()
     setBoundaryConditions(1, field.u, params);
     setBoundaryConditions(2, field.v, params);
     setBoundaryConditions(0, field.p, params);
-
-    for (double t = params.startTime; t < params.endTime; t = t + params.timeStepSize)
+    int n = 0; // counter for the time steps
+    for (double t = params.startTime; t <= params.endTime; t = t + params.timeStepSize)
     {
 
         vector<vector<double>> pPrev = field.p;
@@ -359,7 +361,6 @@ int main()
         veloctiyStarCalculator(field, params);
         poissonEquationSolver(field, params);
         velocityCorrector(field, params);
-
         swapFields(field, params);
         setBoundaryConditions(1, field.u, params);
         setBoundaryConditions(2, field.v, params);
@@ -368,17 +369,18 @@ int main()
         double residualV = checkConvergence(field.v, vPrev, params);
         double residualP = checkConvergence(field.p, pPrev, params);
 
-        cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << endl;
+        cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << " n: " << n << endl;
         // if (residualU < params.timeTolerance && residualV < params.timeTolerance && residualP < params.timeTolerance)
         //{
         // cout << "Converged at time: " << t << endl;
         // break;
         //}
+        n++;
     }
     for (int j = 0; j < params.Ny - 2; j++)
     {
 
-        cout << setprecision(20) << field.ym[j] << " " << (field.u[j + 1][(params.Nx) / 2]) << endl;
+        cout << field.ym[j] << " " << (field.u[j + 1][(params.Nx) / 2]) << endl;
     }
     cout << endl;
 
