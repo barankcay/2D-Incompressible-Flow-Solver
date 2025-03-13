@@ -7,54 +7,48 @@ using namespace std;
 
 struct constParameters
 {
-    int Nx;
-    int Ny;
-    double lengthX;
-    double lengthY;
-    double hx;
-    double hy;
-    double startTime;
-    double endTime;
-    double timeStepSize;
-    double kinematicViscosity;
-    double density;
+    int Nx;                    // Number of cells in the x-direction, including ghost cells
+    int Ny;                    // Number of cells in the y-direction, including ghost cells
+    double lengthX;            // Length of the domain in the x-direction, not including ghost cells
+    double lengthY;            // Length of the domain in the y-direction, not including ghost cells
+    double hx;                 // Grid spacing in the x-direction
+    double hy;                 // Grid spacing in the y-direction
+    double startTime;          // Start time of the simulation
+    double endTime;            // End time of the simulation. Since we have a convergence criteria, this is set to a large number
+    double timeStepSize;       // Time step size. Calculated based on the Courant number and maximum velocity in the domain
+    double kinematicViscosity; // Kinematic viscosity of the fluid. Used to calculate the Reynolds number
+    double density;            // Density of the fluid.
 
-    double uTopWall;
-    double uBottomWall;
-    double uLeftWall;
-    double uRightWall;
-    double vTopWall;
-    double vBottomWall;
-    double vLeftWall;
-    double vRightWall;
-    double courantNumber;
-    double poissonTolerance;
-    double timeTolerance;
-    int maxIterations;
-    int numberOfTimeSteps;
+    double uTopWall;         // u Velocity at the top wall
+    double uBottomWall;      // u Velocity at the bottom wall
+    double vLeftWall;        // v Velocity at the left wall
+    double vRightWall;       // v Velocity at the right wall
+    double courantNumber;    // Courant number used to calculate the time step size
+    double poissonTolerance; // Tolerance for the Poisson equation solver
+    double timeTolerance;    // Tolerance for the time loop convergence
 };
 
 struct fields
 {
-    vector<double> x;
-    vector<double> y;
-    vector<double> xm;
-    vector<double> ym;
+    vector<double> x;  // x-coordinates of the nodes of the cells
+    vector<double> y;  // y-coordinates of the nodes of the cells
+    vector<double> xm; // x-coordinates of the cell centers
+    vector<double> ym; // y-coordinates of the cell centers
 
-    vector<vector<double>> u;
-    vector<vector<double>> uStar;
-    vector<vector<double>> uNew;
-    vector<vector<double>> v;
-    vector<vector<double>> vStar;
-    vector<vector<double>> vNew;
-    vector<vector<double>> p;
+    vector<vector<double>> u;     // u velocity field
+    vector<vector<double>> uStar; // intermediate u velocity field
+    vector<vector<double>> uNew;  // next time step u velocity field
+    vector<vector<double>> v;     // v velocity field
+    vector<vector<double>> vStar; // intermediate v velocity field
+    vector<vector<double>> vNew;  // next time step v velocity field
+    vector<vector<double>> p;     // pressure field
 
     fields(int Nx, int Ny)
     {
-        x.resize(Nx - 1);
-        y.resize(Ny - 1);
-        xm.resize(Nx - 2);
-        ym.resize(Ny - 2);
+        x.resize(Nx - 1);  // not including ghost cells
+        y.resize(Ny - 1);  // not including ghost cells
+        xm.resize(Nx - 2); // not including ghost cells
+        ym.resize(Ny - 2); // not including ghost cells
         u.resize(Ny, vector<double>(Nx));
         uStar.resize(Ny, vector<double>(Nx));
         uNew.resize(Ny, vector<double>(Nx));
@@ -65,6 +59,7 @@ struct fields
     }
 };
 
+// function to initialize the fields
 void initialization(fields &field, constParameters &params)
 {
     for (int i = 0; i < params.Nx; i++)
@@ -81,6 +76,7 @@ void initialization(fields &field, constParameters &params)
         }
     }
 }
+
 // function to create the coordinates of the nodes of cells
 void createCoordinatesXY(vector<double> &x, vector<double> &y, constParameters &params)
 {
@@ -114,27 +110,27 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
     {
         for (int j = params.Ny - 1; j >= 0; j--)
         {
-            M[j][0] = M[j][1];
-            M[j][params.Nx - 1] = M[j][params.Nx - 2];
+            M[j][0] = M[j][1];                         // Left wall, dp/dx = 0
+            M[j][params.Nx - 1] = M[j][params.Nx - 2]; // Right wall, dp/dx = 0
         }
         for (int i = params.Nx - 1; i >= 0; i--)
         {
-            M[0][i] = M[1][i];
-            M[params.Ny - 1][i] = M[params.Ny - 2][i];
+            M[0][i] = M[1][i];                         // Bottom wall, dp/dy = 0
+            M[params.Ny - 1][i] = M[params.Ny - 2][i]; // Top wall, dp/dy = 0
         }
     }
     else if (b == 1)
     {
         for (int j = params.Ny - 1; j >= 0; j--)
         {
-            M[j][0] = 0;
-            M[j][1] = 0;
-            M[j][params.Nx - 1] = 0;
+            M[j][0] = 0;             // Left wall,ghost cell,  u = 0
+            M[j][1] = 0;             // Left wall, u = 0
+            M[j][params.Nx - 1] = 0; // Right wall, u = 0
         }
         for (int i = params.Nx - 1; i >= 0; i--)
         {
-            M[0][i] = 2 * params.uTopWall - M[1][i];
-            M[params.Ny - 1][i] = 2 * params.uBottomWall - M[params.Ny - 2][i];
+            M[0][i] = 2 * params.uTopWall - M[1][i];                            // Top wall, ghost cell
+            M[params.Ny - 1][i] = 2 * params.uBottomWall - M[params.Ny - 2][i]; // Bottom wall, ghost cell
         }
     }
     else if (b == 2)
@@ -142,64 +138,22 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
 
         for (int i = params.Nx - 1; i >= 0; i--)
         {
-            M[0][i] = 0;
-            M[params.Ny - 1][i] = 0;
-            M[params.Ny - 2][i] = 0;
+            M[0][i] = 0;             // Top wall, v = 0
+            M[params.Ny - 1][i] = 0; // Bottom wall, v = 0
+            M[params.Ny - 2][i] = 0; // Bottom wall, ghost cell, v = 0
         }
         for (int j = params.Ny - 1; j >= 0; j--)
         {
-            M[j][0] = 2 * params.vLeftWall - M[j][1];
-            M[j][params.Nx - 1] = 2 * params.vRightWall - M[j][params.Nx - 2];
+            M[j][0] = 2 * params.vLeftWall - M[j][1];                          // Left wall, ghost cell
+            M[j][params.Nx - 1] = 2 * params.vRightWall - M[j][params.Nx - 2]; // Right wall, ghost cell
         }
     }
 
-    M[0][0] = 0.5 * (M[0][1] + M[1][0]);
-    M[0][params.Nx - 1] = 0.5 * (M[0][params.Nx - 2] + M[1][params.Nx - 1]);
-    M[params.Ny - 1][0] = 0.5 * (M[params.Ny - 2][0] + M[params.Ny - 1][1]);
-    M[params.Ny - 1][params.Nx - 1] = 0.5 * (M[params.Ny - 1][params.Nx - 2] + M[params.Ny - 2][params.Nx - 1]);
+    M[0][0] = 0.5 * (M[0][1] + M[1][0]);                                                                         // Top left corner
+    M[0][params.Nx - 1] = 0.5 * (M[0][params.Nx - 2] + M[1][params.Nx - 1]);                                     // Top right corner
+    M[params.Ny - 1][0] = 0.5 * (M[params.Ny - 2][0] + M[params.Ny - 1][1]);                                     // Bottom left corner
+    M[params.Ny - 1][params.Nx - 1] = 0.5 * (M[params.Ny - 1][params.Nx - 2] + M[params.Ny - 2][params.Nx - 1]); // Bottom right corner
 }
-// function to calculate the first order partial derivative using central differencing
-double firstOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters &params)
-{ // x and y are the direction of the derivative
-    // i and j are the indices of the variable
-    // if x = 1 and y = 0, then the derivative is in the x direction
-    // if x = 0 and y = 1, then the derivative is in the y direction
-    double pde;
-    pde = (variable[j - y][i + x] - variable[j + y][i - x]) / (2 * (x * params.hx + y * params.hy));
-    return pde;
-}
-
-// function to calculate the second order partial derivative using central differencing
-double secondOrderPDEcentralDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters &params)
-{ // x and y are the direction of the derivative
-    // i and j are the indices of the variable
-    // if x = 1 and y = 0, then the derivative is in the x direction
-    // if x = 0 and y = 1, then the derivative is in the y direction
-    double pde;
-    pde = (variable[j - y][i + x] - 2 * variable[j][i] + variable[j + y][i - x]) / pow((x * params.hx + y * params.hy), 2);
-    return pde;
-}
-
-double firstOrderPDEforwardDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters &params)
-{ // x and y are the direction of the derivative
-    // i and j are the indices of the variable
-    // if x = 1 and y = 0, then the derivative is in the x direction
-    // if x = 0 and y = 1, then the derivative is in the y direction
-    double pde;
-    pde = (variable[j - y][i + x] - variable[j][i]) / (x * params.hx + y * params.hy);
-    return pde;
-}
-
-double firstOrderPDEbackwardDiff(vector<vector<double>> &variable, int j, int i, int x, int y, constParameters &params)
-{ // x and y are the direction of the derivative
-    // i and j are the indices of the variable
-    // if x = 1 and y = 0, then the derivative is in the x direction
-    // if x = 0 and y = 1, then the derivative is in the y direction
-    double pde;
-    pde = (variable[j][i] - variable[j + y][i - x]) / (x * params.hx + y * params.hy);
-    return pde;
-}
-
 // PREDICTOR STEP
 void veloctiyStarCalculator(fields &field, constParameters &params)
 {
@@ -228,7 +182,7 @@ void poissonEquationSolver(fields &field, constParameters &params)
             for (int j = 1; j < params.Ny - 1; j++)
             {
                 double pOld = field.p[j][i];
-                field.p[j][i] = (pow(params.hy, 2) * pow(params.hx, 2) / (2 * (pow(params.hx, 2) + pow(params.hy, 2)))) * (((field.p[j][i + 1] + field.p[j][i - 1]) / pow(params.hx, 2)) + ((field.p[j - 1][i] + field.p[j + 1][i]) / pow(params.hy, 2)) - ((params.density / params.timeStepSize) * ((field.uStar[j][i + 1] - field.uStar[j][i]) / (params.hx) + (field.vStar[j - 11][i] - field.vStar[j][i]) / (params.hy))));
+                field.p[j][i] = (pow(params.hy, 2) * pow(params.hx, 2) / (2 * (pow(params.hx, 2) + pow(params.hy, 2)))) * (((field.p[j][i + 1] + field.p[j][i - 1]) / pow(params.hx, 2)) + ((field.p[j - 1][i] + field.p[j + 1][i]) / pow(params.hy, 2)) - ((params.density / params.timeStepSize) * ((field.uStar[j][i + 1] - field.uStar[j][i]) / (params.hx) + (field.vStar[j - 1][i] - field.vStar[j][i]) / (params.hy))));
                 residual += abs(field.p[j][i] - pOld);
             }
         }
@@ -343,7 +297,7 @@ int main()
 
     params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / params.uTopWall;
     // params.timeStepSize = 0.001;
-    params.numberOfTimeSteps = (params.endTime - params.startTime) / params.timeStepSize;
+
     initialization(field, params);
     createCoordinatesXY(field.x, field.y, params);
     createCoordinatesXYM(field.xm, field.ym, params);
