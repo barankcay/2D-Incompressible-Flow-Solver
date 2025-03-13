@@ -309,10 +309,9 @@ void swapFields(fields &field, constParameters &params)
         }
     }
 }
-
 int main()
 {
-    double Re = 5000;
+    double Re = 400;
 
     constParameters params;
     params.courantNumber = 0.2;
@@ -334,7 +333,7 @@ int main()
 
     // params.maxIterations = 1000;
     params.poissonTolerance = 1e-3;
-    params.timeTolerance = 1e-9;
+    params.timeTolerance = 1e-6;
 
     params.startTime = 0;
     params.endTime = 10000;
