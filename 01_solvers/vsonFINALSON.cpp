@@ -155,6 +155,8 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
     M[params.Ny - 1][params.Nx - 1] = 0.5 * (M[params.Ny - 1][params.Nx - 2] + M[params.Ny - 2][params.Nx - 1]); // Bottom right corner
 }
 // PREDICTOR STEP
+// u* = un + Δt * ( ν ( ∂²un/∂x² + ∂²un/∂y² ) - ( un ∂un/∂x + v ∂un/∂y ) )
+// v* = vn + Δt * ( ν ( ∂²vn/∂x² + ∂²vn/∂y² ) - ( u ∂vn/∂x + vn ∂vn/∂y ) )
 void veloctiyStarCalculator(fields &field, constParameters &params)
 {
     for (int i = 1; i < params.Nx - 1; i++)
@@ -169,7 +171,7 @@ void veloctiyStarCalculator(fields &field, constParameters &params)
     setBoundaryConditions(2, field.vStar, params);
 }
 // POISSON EQUATION SOLVER
-
+// ∇² p(n+1) = (ρ / Δt) * ∇ · u*
 void poissonEquationSolver(fields &field, constParameters &params)
 {
     double residual = 1.0;
@@ -194,6 +196,8 @@ void poissonEquationSolver(fields &field, constParameters &params)
     cout << "Number of iterations: " << iteration << endl;
 }
 
+// TIME STEP SIZE CALCULATION
+// function to calculate the time step size based on the Courant number and maximum velocity in the domain
 void updateTimeStepSize(fields &field, constParameters &params)
 {
     double maxVelocity = 0.0;
@@ -226,6 +230,7 @@ void updateTimeStepSize(fields &field, constParameters &params)
 
 // CORRECTOR STEP
 void velocityCorrector(fields &field, constParameters &params)
+// u(n+1)   =u*+ Δt*(- (1 / ρ) * ∇p(n+1))
 {
     for (int i = 1; i < params.Nx - 1; i++)
     {
@@ -237,6 +242,8 @@ void velocityCorrector(fields &field, constParameters &params)
     }
 }
 
+// CONVERGENCE CHECK
+// function to check the convergence of the solution
 double checkConvergence(vector<vector<double>> &Mnew, vector<vector<double>> &Mold, constParameters &params)
 {
     double residual = 0.0;
@@ -250,6 +257,7 @@ double checkConvergence(vector<vector<double>> &Mnew, vector<vector<double>> &Mo
     return residual /= (params.Nx * params.Ny);
 }
 
+// function to swap the fields to prepare for the next time step
 void swapFields(fields &field, constParameters &params)
 {
     for (int i = 0; i < params.Nx; i++)
