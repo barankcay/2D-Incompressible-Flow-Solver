@@ -295,7 +295,6 @@ int main()
     fields field(params.Nx, params.Ny);
 
     params.timeStepSize = min((pow(params.hx, 2) * pow(params.hy, 2)) / (2 * params.dynamicViscosity * (pow(params.hx, 2) + pow(params.hy, 2))), 2 * params.dynamicViscosity / (pow(params.uTopWall, 2) + pow(params.vLeftWall, 2)));
-    // params.timeStepSize = 0.001;
 
     initialization(field, params);
     createCoordinatesXY(field.x, field.y, params);
