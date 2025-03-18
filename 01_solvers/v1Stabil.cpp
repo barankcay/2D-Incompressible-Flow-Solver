@@ -16,16 +16,16 @@ struct constParameters
     double hy;                 // Grid spacing in the y-direction
     double startTime;          // Start time of the simulation
     double endTime;            // End time of the simulation. Since we have a convergence criteria, this is set to a large number
-    double timeStepSize;       // Time step size. Calculated based on the Courant number and maximum velocity in the domain
+    double timeStepSize;       // Time step size. Calculated based on the Courant number and peclet number
     double kinematicViscosity; // Kinematic viscosity of the fluid. Used to calculate the Reynolds number
     double dynamicViscosity;   // Dynamic viscosity of the fluid. Dynamic viscosity = density * kinematic viscosity
     double density;            // Density of the fluid.
 
-    double uTopWall;         // u Velocity at the top wall
-    double uBottomWall;      // u Velocity at the bottom wall
-    double vLeftWall;        // v Velocity at the left wall
-    double vRightWall;       // v Velocity at the right wall
-    double courantNumber;    // Courant number used to calculate the time step size
+    double uTopWall;    // u Velocity at the top wall
+    double uBottomWall; // u Velocity at the bottom wall
+    double vLeftWall;   // v Velocity at the left wall
+    double vRightWall;  // v Velocity at the right wall
+
     double poissonTolerance; // Tolerance for the Poisson equation solver
     double timeTolerance;    // Tolerance for the time loop convergence
 };
@@ -199,7 +199,7 @@ void poissonEquationSolver(fields &field, constParameters &params)
 }
 
 // TIME STEP SIZE CALCULATION
-// function to calculate the time step size based on the Courant number and maximum velocity in the domain
+// function to calculate the time step size based on the Courant number and Peclet number
 void updateTimeStepSize(fields &field, constParameters &params)
 {
     // Calculate the maximum velocity in the domain (including boundaries)
@@ -265,10 +265,10 @@ void swapFields(fields &field, constParameters &params)
 int main()
 {
     auto start = std::chrono::steady_clock::now();
-    double Re = 1000;
+    double Re = 400;
 
     constParameters params;
-    params.courantNumber = 0.2;
+
     params.density = 1.0;
     params.kinematicViscosity = 1.0 / Re;
     params.dynamicViscosity = params.kinematicViscosity * params.density;
@@ -279,14 +279,13 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 168;
-    params.Ny = 168;
+    params.Nx = 102;
+    params.Ny = 102;
     params.lengthX = 1;
     params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx - 2);
     params.hy = params.lengthY / (params.Ny - 2);
 
-    // params.maxIterations = 1000;
     params.poissonTolerance = 1e-3;
     params.timeTolerance = 1e-9;
 
@@ -345,6 +344,6 @@ int main()
     std::cout << "\nEnd of the main function is reached. Stopping.\n\n";
 
     auto end = std::chrono::steady_clock::now();
-    std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 100 << " s." << std::endl;
+    std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000 << " s." << std::endl;
     return 0;
 }
