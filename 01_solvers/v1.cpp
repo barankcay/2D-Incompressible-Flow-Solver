@@ -3,6 +3,7 @@
 #include <fstream> // Include for file handling
 #include <iomanip> // Include for fixed precision formatting
 #include <cmath>
+#include <chrono>
 using namespace std;
 
 struct constParameters
@@ -274,7 +275,8 @@ void swapFields(fields &field, constParameters &params)
 
 int main()
 {
-    double Re = 400;
+    auto start = std::chrono::steady_clock::now();
+    double Re = 1000;
 
     constParameters params;
     params.courantNumber = 0.2;
@@ -296,7 +298,7 @@ int main()
 
     // params.maxIterations = 1000;
     params.poissonTolerance = 1e-3;
-    params.timeTolerance = 1e-6;
+    params.timeTolerance = 1e-9;
 
     params.startTime = 0;
     params.endTime = 10000;
@@ -320,7 +322,7 @@ int main()
         vector<vector<double>> pPrev = field.p;
         vector<vector<double>> uPrev = field.u;
         vector<vector<double>> vPrev = field.v;
-        updateTimeStepSize(field, params);
+
         veloctiyStarCalculator(field, params);
         poissonEquationSolver(field, params);
         velocityCorrector(field, params);
@@ -328,6 +330,7 @@ int main()
         setBoundaryConditions(1, field.u, params);
         setBoundaryConditions(2, field.v, params);
         setBoundaryConditions(0, field.p, params);
+        updateTimeStepSize(field, params);
         double residualU = checkConvergence(field.u, uPrev, params);
         double residualV = checkConvergence(field.v, vPrev, params);
         double residualP = checkConvergence(field.p, pPrev, params);
@@ -348,5 +351,9 @@ int main()
     cout << endl;
 
     cout << params.timeStepSize << endl;
+    std::cout << "\nEnd of the main function is reached. Stopping.\n\n";
+
+    auto end = std::chrono::steady_clock::now();
+    std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000 << " s." << std::endl;
     return 0;
 }

@@ -1,9 +1,9 @@
 import numpy as np
 from matplotlib import pyplot as plt
-ghia=np.loadtxt("ghia1000.txt")
+ghia=np.loadtxt("ghia5000.txt")
 
-kod=np.loadtxt("kod1000.txt")
-
+kod=np.loadtxt("kod5000.txt")
+kodstabil=np.loadtxt("kodstabil5000.txt")
 kodCS=np.loadtxt("kodCS.txt")
 ghiaVeloc=ghia[:,1]
 ghiaCoord=ghia[:,0]
@@ -11,12 +11,16 @@ ghiaCoord=ghia[:,0]
 codeVeloc=kod[:,1]
 codeCoord=kod[:,0]
 
+codeStabilVeloc=kodstabil[:,1]
+codeStabilCoord=kodstabil[:,0]
+
 codeCSVeloc=kodCS[:,1]
 codeCSCoord=kodCS[:,0]
 
 plt.figure(figsize=(4,4))
 plt.grid()
 plt.plot(codeVeloc,codeCoord,linestyle="-",linewidth=1,label="Code",color="red")
+plt.plot(codeStabilVeloc,codeStabilCoord,linestyle="--",linewidth=1,label="Code Stabil",color="green")
 plt.plot(ghiaVeloc,ghiaCoord,"o",color="black")
 # plt.plot(codeCSVeloc,codeCSCoord,linestyle="--",linewidth=1,label="Code CS",color="blue")
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
