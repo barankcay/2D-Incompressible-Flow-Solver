@@ -1,8 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
-ghia=np.loadtxt("ghia5000.txt")
+ghia=np.loadtxt("ghia1000.txt")
 
-kod=np.loadtxt("kod5000.txt")
+kod=np.loadtxt("kod1000.txt")
 
 kodCS=np.loadtxt("kodCS.txt")
 ghiaVeloc=ghia[:,1]

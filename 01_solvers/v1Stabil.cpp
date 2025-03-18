@@ -17,6 +17,7 @@ struct constParameters
     double endTime;            // End time of the simulation. Since we have a convergence criteria, this is set to a large number
     double timeStepSize;       // Time step size. Calculated based on the Courant number and maximum velocity in the domain
     double kinematicViscosity; // Kinematic viscosity of the fluid. Used to calculate the Reynolds number
+    double dynamicViscosity;   // Dynamic viscosity of the fluid. Dynamic viscosity = density * kinematic viscosity
     double density;            // Density of the fluid.
 
     double uTopWall;         // u Velocity at the top wall
@@ -200,31 +201,19 @@ void poissonEquationSolver(fields &field, constParameters &params)
 // function to calculate the time step size based on the Courant number and maximum velocity in the domain
 void updateTimeStepSize(fields &field, constParameters &params)
 {
-    double maxVelocity = 0.0;
-
     // Calculate the maximum velocity in the domain (including boundaries)
-    for (int i = 0; i < params.Nx; i++)
+    for (int i = 1; i < params.Nx - 1; i++)
     {
-        for (int j = 0; j < params.Ny; j++)
+        for (int j = 1; j < params.Ny - 1; j++)
         {
-            double velocity = sqrt(pow(field.u[j][i], 2) + pow(field.v[j][i], 2));
-            if (velocity > maxVelocity)
+            double rule1 = (pow(params.hx, 2) * pow(params.hy, 2)) / (2 * params.dynamicViscosity * (pow(params.hx, 2) + pow(params.hy, 2)));
+            double rule2 = 2 * params.dynamicViscosity / (pow(field.u[j][i], 2) + pow(field.v[j][i], 2));
+            double finalRule = min(rule1, rule2);
+            if (finalRule < params.timeStepSize)
             {
-                maxVelocity = velocity;
+                params.timeStepSize = finalRule;
             }
         }
-    }
-
-    // Handle the case where maxVelocity is zero (initial time step)
-    if (maxVelocity == 0.0)
-    {
-        // Set a default time step size based on the grid spacing and Courant number
-        params.timeStepSize = params.courantNumber * min(params.hx, params.hy);
-    }
-    else
-    {
-        // Calculate the time step size based on the maximum velocity
-        params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / maxVelocity;
     }
 }
 
@@ -274,12 +263,13 @@ void swapFields(fields &field, constParameters &params)
 
 int main()
 {
-    double Re = 400;
+    double Re = 1000;
 
     constParameters params;
     params.courantNumber = 0.2;
     params.density = 1.0;
     params.kinematicViscosity = 1.0 / Re;
+    params.dynamicViscosity = params.kinematicViscosity * params.density;
 
     params.uTopWall = 1;
     params.uBottomWall = 0.0;
@@ -303,7 +293,7 @@ int main()
 
     fields field(params.Nx, params.Ny);
 
-    params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / params.uTopWall;
+    params.timeStepSize = min((pow(params.hx, 2) * pow(params.hy, 2)) / (2 * params.dynamicViscosity * (pow(params.hx, 2) + pow(params.hy, 2))), 2 * params.dynamicViscosity / (pow(params.uTopWall, 2) + pow(params.vLeftWall, 2)));
     // params.timeStepSize = 0.001;
 
     initialization(field, params);
