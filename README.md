@@ -11,19 +11,19 @@ This project implements a 2D incompressible flow solver based on computational f
 
 ## Code Overview
 
-### [01_solvers/v1_ChannelFlow_stable.cpp](01_solvers/v1_ChannelFlow_stable.cpp)
+### [01_solvers/v1_ChannelFlow_CrPe.cpp](01_solvers/v1_ChannelFlow_CrPe.cpp)
 - Implements a stable solver for channel flow problems.
 - Outputs results in `.vtk` format for visualization.
 
-### [01_solvers/v1_LDC_stable.cpp](01_solvers/v1_LDC_stable.cpp)
+### [01_solvers/v1_LDC_CrPe.cpp](01_solvers/v1_LDC_CrPe.cpp)
 - Implements a stable solver for the lid-driven cavity problem.
 - Focuses on numerical stability and accuracy.
 
-### [01_solvers/v1_LDC_stable_paraview.cpp](01_solvers/v1_LDC_stable_paraview.cpp)
+### [01_solvers/v1_LDC_CrPe_paraview.cpp](01_solvers/v1_LDC_CrPe_paraview.cpp)
 - Extends the stable LDC solver with enhanced support for ParaView visualization.
 - Outputs detailed `.vtk` files for post-processing.
 
-### [01_solvers/v1_LDC.cpp](01_solvers/v1_LDC.cpp)
+### [01_solvers/v1_LDC_Cr.cpp](01_solvers/v1_LDC_Cr.cpp)
 - A basic implementation of the lid-driven cavity solver.
 - Serves as a starting point for understanding the problem setup and solution.
 
@@ -31,4 +31,14 @@ This project implements a 2D incompressible flow solver based on computational f
 
 1. **Compile the Code**: Use a C++ compiler (e.g., `g++`) to compile the desired solver file. For example:
    ```sh
-   g++ -o ldc_solver 01_solvers/v1_LDC_stable.cpp
+   g++  01_solvers/v1_LDC_CrPe_paraview.cpp -o IncompSolver.exe -O3 -ffast-math
+
+2. **Run the Executable**: Execute the compiled binary to run the solver.
+    ```sh
+    .\IncompSolver.exe
+
+3. **Visualize**: Open the generate .vtk file in ParaView for visualization
+
+**References**
+-Mark Owkes, "A guide to writing your first CFD solver", April 2024.
+-U. Ghia, K.N. Ghia, and C.T. Shin, "High-Re Solutions for Incompressible Flow Using the Navier-Stokes Equations and a Multigrid Method," Journal of Computational Physics, vol. 48, no. 3, pp. 387–411, 1982, doi: 10.1016/0021-9991(82)90058-4
