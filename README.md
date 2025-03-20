@@ -39,6 +39,6 @@ This project implements a 2D incompressible flow solver based on computational f
 
 3. **Visualize**: Open the generate .vtk file in ParaView for visualization
 
-**References**
+## References
 -Mark Owkes, "A guide to writing your first CFD solver", April 2024.
 -U. Ghia, K.N. Ghia, and C.T. Shin, "High-Re Solutions for Incompressible Flow Using the Navier-Stokes Equations and a Multigrid Method," Journal of Computational Physics, vol. 48, no. 3, pp. 387–411, 1982, doi: 10.1016/0021-9991(82)90058-4
