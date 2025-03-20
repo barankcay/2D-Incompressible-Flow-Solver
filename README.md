@@ -1,15 +1,4 @@
 # 2D-Incompressible-Flow-Solver
-Flow solver based on Mark Owkes paper, with C++. </br>
-
-
-References</br>
--Mark Owkes, "A guide to writing your first CFD solver", April 2024. </br>
--Benjamin Seibold, "A compact and fast Matlab code solving the incompressible
-Navier-Stokes equations on rectangular domains", March 2008.
-
-
-
-# 2D-Incompressible-Flow-Solver
 
 This project implements a 2D incompressible flow solver based on computational fluid dynamics (CFD) principles. The solver is inspired by Mark Owkes' paper and includes multiple implementations for solving channel flow and lid-driven cavity (LDC) problems using C++.
 
@@ -17,7 +6,7 @@ This project implements a 2D incompressible flow solver based on computational f
 
 - **Channel Flow Solver**: Simulates fluid flow in a channel.
 - **Lid-Driven Cavity Solver**: Simulates fluid flow in a square cavity driven by the motion of one of its walls.
-- **Stable and Parallel Implementations**: Includes stable and parallelized versions of the solvers for improved performance.
+- **Stable Implementations**: Includes different stability controls such as Peclet & Courant number and Courant number alone.
 - **Visualization Support**: Outputs results in `.vtk` format for visualization in tools like ParaView.
 
 ## Code Overview
