@@ -42,7 +42,7 @@ visualization.
     ```sh
     .\IncompSolver.exe
 
-3. **Visualize**: Open the generate .vtk file in ParaView for visualization
+3. **Visualize**: Open the generate '.vtk' file in ParaView for visualization
 
 ## References
 -Mark Owkes, "A guide to writing your first CFD solver", April 2024.
