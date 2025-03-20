@@ -395,7 +395,7 @@ int main()
 
     auto end = std::chrono::steady_clock::now();
     std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000 << " s." << std::endl;
-    string vtkFilename = "channel_flow_final.vtk";
+    string vtkFilename = "LDC_final.vtk";
     writeVTKFile(field, params, vtkFilename);
     return 0;
 }
