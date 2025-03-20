@@ -13,18 +13,23 @@ This project implements a 2D incompressible flow solver based on computational f
 
 ### [01_solvers/v1_ChannelFlow_CrPe.cpp](01_solvers/v1_ChannelFlow_CrPe.cpp)
 - Implements a stable solver for channel flow problems.
+- Includes Courant and Peclet number control.
 - Outputs results in `.vtk` format for visualization.
 
 ### [01_solvers/v1_LDC_CrPe.cpp](01_solvers/v1_LDC_CrPe.cpp)
 - Implements a stable solver for the lid-driven cavity problem.
+- Includes Courant and Peclet number control.
 - Focuses on numerical stability and accuracy.
 
 ### [01_solvers/v1_LDC_CrPe_paraview.cpp](01_solvers/v1_LDC_CrPe_paraview.cpp)
-- Extends the stable LDC solver with enhanced support for ParaView visualization.
+- Extends the stable LDC solver with enhanced support for ParaView 
+visualization.
+- Includes Courant and Peclet number control.
 - Outputs detailed `.vtk` files for post-processing.
 
 ### [01_solvers/v1_LDC_Cr.cpp](01_solvers/v1_LDC_Cr.cpp)
 - A basic implementation of the lid-driven cavity solver.
+- Includes Courant and Peclet number control only.
 - Serves as a starting point for understanding the problem setup and solution.
 
 ## How to Run
