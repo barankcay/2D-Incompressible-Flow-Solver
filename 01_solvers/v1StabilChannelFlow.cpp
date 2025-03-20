@@ -320,7 +320,7 @@ void writeVTKFile(const fields &field, const constParameters &params, const stri
 int main()
 {
     auto start = std::chrono::steady_clock::now();
-    double Re = 400;
+    double Re = 1000;
 
     constParameters params;
 
@@ -334,14 +334,14 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.uInlet = 2.0;
+    params.uInlet = 0.1;
     params.vInlet = 0.0;
 
     params.pressureOutlet = 0.0;
 
     params.Nx = 102;
-    params.Ny = 102;
-    params.lengthX = 1;
+    params.Ny = 302;
+    params.lengthX = 3;
     params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx - 2);
     params.hy = params.lengthY / (params.Ny - 2);
@@ -363,6 +363,7 @@ int main()
     setBoundaryConditions(1, field.u, params);
     setBoundaryConditions(2, field.v, params);
     setBoundaryConditions(0, field.p, params);
+    double lastSaveTime = 0;
     int n = 0; // counter for the time steps
     for (double t = params.startTime; t <= params.endTime; t = t + params.timeStepSize)
     {
@@ -383,7 +384,7 @@ int main()
         double residualV = checkConvergence(field.v, vPrev, params);
         double residualP = checkConvergence(field.p, pPrev, params);
 
-        cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << " n: " << n << endl;
+            cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << " n: " << n << endl;
         if (residualU < params.timeTolerance && residualV < params.timeTolerance && residualP < params.timeTolerance)
         {
             cout << "Converged at time: " << t << endl;
@@ -391,12 +392,6 @@ int main()
         }
         n++;
     }
-    for (int j = 0; j < params.Ny - 2; j++)
-    {
-
-        cout << field.ym[j] << " " << (field.u[j + 1][(params.Nx) / 2]) << endl;
-    }
-    cout << endl;
 
     cout << params.timeStepSize << endl;
 
