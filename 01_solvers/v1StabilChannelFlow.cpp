@@ -26,6 +26,11 @@ struct constParameters
     double vLeftWall;   // v Velocity at the left wall
     double vRightWall;  // v Velocity at the right wall
 
+    double uInlet; // u velocity at the inlet
+    double vInlet; // v velocity at the inlet
+
+    double pressureOutlet; // Pressure at the outlet
+
     double poissonTolerance; // Tolerance for the Poisson equation solver
     double timeTolerance;    // Tolerance for the time loop convergence
 };
@@ -112,8 +117,8 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
     {
         for (int j = params.Ny - 1; j >= 0; j--)
         {
-            M[j][0] = M[j][1];                         // Left wall, dp/dx = 0
-            M[j][params.Nx - 1] = M[j][params.Nx - 2]; // Right wall, dp/dx = 0
+            M[j][0] = M[j][1];                                                     // Left wall, dp/dx = 0
+            M[j][params.Nx - 1] = 2 * params.pressureOutlet - M[j][params.Nx - 2]; // Right wall, p=0
         }
         for (int i = params.Nx - 1; i >= 0; i--)
         {
@@ -125,9 +130,9 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
     {
         for (int j = params.Ny - 1; j >= 0; j--)
         {
-            M[j][0] = 0;             // Left wall,ghost cell,  u = 0
-            M[j][1] = 0;             // Left wall, u = 0
-            M[j][params.Nx - 1] = 0; // Right wall, u = 0
+            M[j][0] = 0;                               // Left wall,ghost cell,  u = 0
+            M[j][1] = params.uInlet;                   // Left wall, u = 0
+            M[j][params.Nx - 1] = M[j][params.Nx - 2]; // Right wall, du/dx = 0
         }
         for (int i = params.Nx - 1; i >= 0; i--)
         {
@@ -146,8 +151,8 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &pa
         }
         for (int j = params.Ny - 1; j >= 0; j--)
         {
-            M[j][0] = 2 * params.vLeftWall - M[j][1];                          // Left wall, ghost cell
-            M[j][params.Nx - 1] = 2 * params.vRightWall - M[j][params.Nx - 2]; // Right wall, ghost cell
+            M[j][0] = 2 * params.vLeftWall - M[j][1];  // Left wall, ghost cell
+            M[j][params.Nx - 1] = M[j][params.Nx - 2]; // Right wall, ghost cell
         }
     }
 
@@ -261,7 +266,6 @@ void swapFields(fields &field, constParameters &params)
         }
     }
 }
-
 void writeVTKFile(const fields &field, const constParameters &params, const string &filename)
 {
     ofstream vtkFile(filename);
@@ -316,7 +320,7 @@ void writeVTKFile(const fields &field, const constParameters &params, const stri
 int main()
 {
     auto start = std::chrono::steady_clock::now();
-    double Re = 1000;
+    double Re = 400;
 
     constParameters params;
 
@@ -324,11 +328,16 @@ int main()
     params.kinematicViscosity = 1.0 / Re;
     params.dynamicViscosity = params.kinematicViscosity * params.density;
 
-    params.uTopWall = 1;
+    params.uTopWall = 0.0;
     params.uBottomWall = 0.0;
 
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
+
+    params.uInlet = 2.0;
+    params.vInlet = 0.0;
+
+    params.pressureOutlet = 0.0;
 
     params.Nx = 102;
     params.Ny = 102;
