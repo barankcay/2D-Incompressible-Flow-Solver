@@ -394,7 +394,7 @@ int main()
     std::cout << "\nEnd of the main function is reached. Stopping.\n\n";
 
     auto end = std::chrono::steady_clock::now();
-    std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000 << " s." << std::endl;
+    std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms." << std::endl;
     string vtkFilename = "LDC_final.vtk";
     writeVTKFile(field, params, vtkFilename);
     return 0;

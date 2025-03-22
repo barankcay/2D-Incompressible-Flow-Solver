@@ -384,7 +384,7 @@ int main()
         double residualV = checkConvergence(field.v, vPrev, params);
         double residualP = checkConvergence(field.p, pPrev, params);
 
-            cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << " n: " << n << endl;
+        cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << " n: " << n << endl;
         if (residualU < params.timeTolerance && residualV < params.timeTolerance && residualP < params.timeTolerance)
         {
             cout << "Converged at time: " << t << endl;
@@ -398,7 +398,7 @@ int main()
     std::cout << "\nEnd of the main function is reached. Stopping.\n\n";
 
     auto end = std::chrono::steady_clock::now();
-    std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000 << " s." << std::endl;
+    std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms." << std::endl;
     string vtkFilename = "channel_flow_final.vtk";
     writeVTKFile(field, params, vtkFilename);
     return 0;
