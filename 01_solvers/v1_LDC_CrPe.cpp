@@ -6,50 +6,44 @@
 #include <chrono>
 using namespace std;
 
-#ifdef USE_DOUBLES
-typedef double user_data_t;
-#else
-typedef float user_data_t;
-#endif
-
 struct constParameters
 {
-    int Nx;                         // Number of cells in the x-direction, including ghost cells
-    int Ny;                         // Number of cells in the y-direction, including ghost cells
-    user_data_t lengthX;            // Length of the domain in the x-direction, not including ghost cells
-    user_data_t lengthY;            // Length of the domain in the y-direction, not including ghost cells
-    user_data_t hx;                 // Grid spacing in the x-direction
-    user_data_t hy;                 // Grid spacing in the y-direction
-    user_data_t startTime;          // Start time of the simulation
-    user_data_t endTime;            // End time of the simulation. Since we have a convergence criteria, this is set to a large number
-    user_data_t timeStepSize;       // Time step size. Calculated based on the Courant number and peclet number
-    user_data_t kinematicViscosity; // Kinematic viscosity of the fluid. Used to calculate the Reynolds number
-    user_data_t dynamicViscosity;   // Dynamic viscosity of the fluid. Dynamic viscosity = density * kinematic viscosity
-    user_data_t density;            // Density of the fluid.
+    int Nx;                    // Number of cells in the x-direction, including ghost cells
+    int Ny;                    // Number of cells in the y-direction, including ghost cells
+    double lengthX;            // Length of the domain in the x-direction, not including ghost cells
+    double lengthY;            // Length of the domain in the y-direction, not including ghost cells
+    double hx;                 // Grid spacing in the x-direction
+    double hy;                 // Grid spacing in the y-direction
+    double startTime;          // Start time of the simulation
+    double endTime;            // End time of the simulation. Since we have a convergence criteria, this is set to a large number
+    double timeStepSize;       // Time step size. Calculated based on the Courant number and peclet number
+    double kinematicViscosity; // Kinematic viscosity of the fluid. Used to calculate the Reynolds number
+    double dynamicViscosity;   // Dynamic viscosity of the fluid. Dynamic viscosity = density * kinematic viscosity
+    double density;            // Density of the fluid.
 
-    user_data_t uTopWall;    // u Velocity at the top wall
-    user_data_t uBottomWall; // u Velocity at the bottom wall
-    user_data_t vLeftWall;   // v Velocity at the left wall
-    user_data_t vRightWall;  // v Velocity at the right wall
+    double uTopWall;    // u Velocity at the top wall
+    double uBottomWall; // u Velocity at the bottom wall
+    double vLeftWall;   // v Velocity at the left wall
+    double vRightWall;  // v Velocity at the right wall
 
-    user_data_t poissonTolerance; // Tolerance for the Poisson equation solver
-    user_data_t timeTolerance;    // Tolerance for the time loop convergence
+    double poissonTolerance; // Tolerance for the Poisson equation solver
+    double timeTolerance;    // Tolerance for the time loop convergence
 };
 
 struct fields
 {
-    vector<user_data_t> x;  // x-coordinates of the nodes of the cells
-    vector<user_data_t> y;  // y-coordinates of the nodes of the cells
-    vector<user_data_t> xm; // x-coordinates of the cell centers
-    vector<user_data_t> ym; // y-coordinates of the cell centers
+    vector<double> x;  // x-coordinates of the nodes of the cells
+    vector<double> y;  // y-coordinates of the nodes of the cells
+    vector<double> xm; // x-coordinates of the cell centers
+    vector<double> ym; // y-coordinates of the cell centers
 
-    vector<vector<user_data_t>> u;     // u velocity field
-    vector<vector<user_data_t>> uStar; // intermediate u velocity field
-    vector<vector<user_data_t>> uNew;  // next time step u velocity field
-    vector<vector<user_data_t>> v;     // v velocity field
-    vector<vector<user_data_t>> vStar; // intermediate v velocity field
-    vector<vector<user_data_t>> vNew;  // next time step v velocity field
-    vector<vector<user_data_t>> p;     // pressure field
+    vector<vector<double>> u;     // u velocity field
+    vector<vector<double>> uStar; // intermediate u velocity field
+    vector<vector<double>> uNew;  // next time step u velocity field
+    vector<vector<double>> v;     // v velocity field
+    vector<vector<double>> vStar; // intermediate v velocity field
+    vector<vector<double>> vNew;  // next time step v velocity field
+    vector<vector<double>> p;     // pressure field
 
     fields(int Nx, int Ny)
     {
@@ -57,13 +51,13 @@ struct fields
         y.resize(Ny - 1);  // not including ghost cells
         xm.resize(Nx - 2); // not including ghost cells
         ym.resize(Ny - 2); // not including ghost cells
-        u.resize(Ny, vector<user_data_t>(Nx));
-        uStar.resize(Ny, vector<user_data_t>(Nx));
-        uNew.resize(Ny, vector<user_data_t>(Nx));
-        vStar.resize(Ny, vector<user_data_t>(Nx));
-        vNew.resize(Ny, vector<user_data_t>(Nx));
-        v.resize(Ny, vector<user_data_t>(Nx));
-        p.resize(Ny, vector<user_data_t>(Nx));
+        u.resize(Ny, vector<double>(Nx));
+        uStar.resize(Ny, vector<double>(Nx));
+        uNew.resize(Ny, vector<double>(Nx));
+        vStar.resize(Ny, vector<double>(Nx));
+        vNew.resize(Ny, vector<double>(Nx));
+        v.resize(Ny, vector<double>(Nx));
+        p.resize(Ny, vector<double>(Nx));
     }
 };
 
@@ -86,7 +80,7 @@ void initialization(fields &field, constParameters &params)
 }
 
 // function to create the coordinates of the nodes of cells
-void createCoordinatesXY(vector<user_data_t> &x, vector<user_data_t> &y, constParameters &params)
+void createCoordinatesXY(vector<double> &x, vector<double> &y, constParameters &params)
 {
     for (int j = 0; j < params.Ny - 1; j++)
     {
@@ -99,7 +93,7 @@ void createCoordinatesXY(vector<user_data_t> &x, vector<user_data_t> &y, constPa
 }
 
 // function to create the coordinates of the cell centers
-void createCoordinatesXYM(vector<user_data_t> &xm, vector<user_data_t> &ym, constParameters &params)
+void createCoordinatesXYM(vector<double> &xm, vector<double> &ym, constParameters &params)
 {
     for (int j = 0; j < params.Ny - 2; j++)
     {
@@ -112,7 +106,7 @@ void createCoordinatesXYM(vector<user_data_t> &xm, vector<user_data_t> &ym, cons
     }
 }
 
-void setBoundaryConditions(int b, vector<vector<user_data_t>> &M, constParameters &params)
+void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &params)
 {
     if (b == 0)
     {
@@ -182,7 +176,7 @@ void veloctiyStarCalculator(fields &field, constParameters &params)
 // ∇² p(n+1) = (ρ / Δt) * ∇ · u*
 void poissonEquationSolver(fields &field, constParameters &params)
 {
-    user_data_t residual = 1.0;
+    double residual = 1.0;
     int iteration = 0;
     while (residual > params.poissonTolerance)
     {
@@ -191,7 +185,7 @@ void poissonEquationSolver(fields &field, constParameters &params)
         {
             for (int j = 1; j < params.Ny - 1; j++)
             {
-                user_data_t pOld = field.p[j][i];
+                double pOld = field.p[j][i];
                 field.p[j][i] = (pow(params.hy, 2) * pow(params.hx, 2) / (2 * (pow(params.hx, 2) + pow(params.hy, 2)))) * (((field.p[j][i + 1] + field.p[j][i - 1]) / pow(params.hx, 2)) + ((field.p[j - 1][i] + field.p[j + 1][i]) / pow(params.hy, 2)) - ((params.density / params.timeStepSize) * ((field.uStar[j][i + 1] - field.uStar[j][i]) / (params.hx) + (field.vStar[j - 1][i] - field.vStar[j][i]) / (params.hy))));
                 residual += abs(field.p[j][i] - pOld);
             }
@@ -213,9 +207,9 @@ void updateTimeStepSize(fields &field, constParameters &params)
     {
         for (int j = 1; j < params.Ny - 1; j++)
         {
-            user_data_t rule1 = (pow(params.hx, 2) * pow(params.hy, 2)) / (2 * params.dynamicViscosity * (pow(params.hx, 2) + pow(params.hy, 2)));
-            user_data_t rule2 = 2 * params.dynamicViscosity / (pow(field.u[j][i], 2) + pow(field.v[j][i], 2));
-            user_data_t finalRule = min(rule1, rule2);
+            double rule1 = (pow(params.hx, 2) * pow(params.hy, 2)) / (2 * params.dynamicViscosity * (pow(params.hx, 2) + pow(params.hy, 2)));
+            double rule2 = 2 * params.dynamicViscosity / (pow(field.u[j][i], 2) + pow(field.v[j][i], 2));
+            double finalRule = min(rule1, rule2);
             if (finalRule < params.timeStepSize)
             {
                 params.timeStepSize = finalRule;
@@ -240,9 +234,9 @@ void velocityCorrector(fields &field, constParameters &params)
 
 // CONVERGENCE CHECK
 // function to check the convergence of the solution
-user_data_t checkConvergence(vector<vector<user_data_t>> &Mnew, vector<vector<user_data_t>> &Mold, constParameters &params)
+double checkConvergence(vector<vector<double>> &Mnew, vector<vector<double>> &Mold, constParameters &params)
 {
-    user_data_t residual = 0.0;
+    double residual = 0.0;
     for (int i = 1; i < params.Nx - 1; i++)
     {
         for (int j = 1; j < params.Ny - 1; j++)
@@ -271,7 +265,7 @@ void swapFields(fields &field, constParameters &params)
 int main()
 {
     auto start = std::chrono::steady_clock::now();
-    user_data_t Re = 400;
+    double Re = 400;
 
     constParameters params;
 
@@ -293,7 +287,7 @@ int main()
     params.hy = params.lengthY / (params.Ny - 2);
 
     params.poissonTolerance = 1e-3;
-    params.timeTolerance = 1e-9;
+    params.timeTolerance = 5e-7;
 
     params.startTime = 0;
     params.endTime = 10000;
@@ -310,12 +304,12 @@ int main()
     setBoundaryConditions(2, field.v, params);
     setBoundaryConditions(0, field.p, params);
     int n = 0; // counter for the time steps
-    for (user_data_t t = params.startTime; t <= params.endTime; t = t + params.timeStepSize)
+    for (double t = params.startTime; t <= params.endTime; t = t + params.timeStepSize)
     {
 
-        vector<vector<user_data_t>> pPrev = field.p;
-        vector<vector<user_data_t>> uPrev = field.u;
-        vector<vector<user_data_t>> vPrev = field.v;
+        vector<vector<double>> pPrev = field.p;
+        vector<vector<double>> uPrev = field.u;
+        vector<vector<double>> vPrev = field.v;
 
         veloctiyStarCalculator(field, params);
         poissonEquationSolver(field, params);
@@ -325,9 +319,9 @@ int main()
         setBoundaryConditions(2, field.v, params);
         setBoundaryConditions(0, field.p, params);
         updateTimeStepSize(field, params);
-        user_data_t residualU = checkConvergence(field.u, uPrev, params);
-        user_data_t residualV = checkConvergence(field.v, vPrev, params);
-        user_data_t residualP = checkConvergence(field.p, pPrev, params);
+        double residualU = checkConvergence(field.u, uPrev, params);
+        double residualV = checkConvergence(field.v, vPrev, params);
+        double residualP = checkConvergence(field.p, pPrev, params);
 
         cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << " n: " << n << endl;
         if (residualU < params.timeTolerance && residualV < params.timeTolerance && residualP < params.timeTolerance)
@@ -349,6 +343,6 @@ int main()
     std::cout << "\nEnd of the main function is reached. Stopping.\n\n";
 
     auto end = std::chrono::steady_clock::now();
-    std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms." << std::endl;
+    std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000 << " s." << std::endl;
     return 0;
 }
