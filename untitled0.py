@@ -2,8 +2,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 ghia=np.loadtxt("ghia3200.txt")
 
-kod=np.loadtxt("kod3200.txt")
-kodstabil=np.loadtxt("kodstabil3200.txt")
+kod=np.loadtxt("kod3200Cr.txt")
+kodstabil=np.loadtxt("kod3200Pe.txt")
 # kodCS=np.loadtxt("kodCS.txt")
 ghiaVeloc=ghia[:,1]
 ghiaCoord=ghia[:,0]
@@ -17,11 +17,11 @@ codeStabilCoord=kodstabil[:,0]
 # codeCSVeloc=kodCS[:,1]
 # codeCSCoord=kodCS[:,0]
 
-plt.figure(figsize=(4,4))
+plt.figure(figsize=(5,5))
 plt.grid()
 plt.plot(codeVeloc,codeCoord,linestyle="-",linewidth=1,label="Code",color="red")
 plt.plot(codeStabilVeloc,codeStabilCoord,linestyle="--",linewidth=1,label="Code Stabil",color="green")
-plt.plot(ghiaVeloc,ghiaCoord,"o",color="black")
+plt.plot(ghiaVeloc,ghiaCoord,"o",label="ghia",color="black")
 # plt.plot(codeCSVeloc,codeCSCoord,linestyle="--",linewidth=1,label="Code CS",color="blue")
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('u[m/s]')
