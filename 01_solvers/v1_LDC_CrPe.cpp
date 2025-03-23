@@ -265,7 +265,7 @@ void swapFields(fields &field, constParameters &params)
 int main()
 {
     auto start = std::chrono::steady_clock::now();
-    double Re = 1000;
+    double Re = 5000;
 
     constParameters params;
 
@@ -279,15 +279,15 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 142;
-    params.Ny = 142;
+    params.Nx = 168;
+    params.Ny = 168;
     params.lengthX = 1;
     params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx - 2);
     params.hy = params.lengthY / (params.Ny - 2);
 
     params.poissonTolerance = 1e-3;
-    params.timeTolerance = 5e-7;
+    params.timeTolerance = 1e-9;
 
     params.startTime = 0;
     params.endTime = 10000;
