@@ -48,7 +48,7 @@ The main program initializes parameters, runs the simulation loop, and outputs r
 5. **Answer the Prompts**:
    - The program will ask for input parameters. Answer the questions based on the options provided:
      - **Reynolds Number**: Enter a numerical value (e.g., `100`).
-     - **Time Step Calculation**: Choose `(Y/N)` to calculate the time step size based on Courant and Peclet numbers. If the answer is 'Y', both Cr and Pe is included. If the answer is 'N', then only Cr is included.
+     - **Time Step Calculation**: Choose `(Y/N)` to calculate the time step size based on Courant and Peclet numbers. If `Y`, both Cr and Pe is included. If `N`, then only Cr is included.
      - **Write VTK File**: Choose `(Y/N)` to enable or disable `.vtk` file output.
      - **Lid-Driven Cavity Case**: Choose `(Y/N)` to specify the type of simulation.
        - If `N`, the case becomes a channel flow case and ensure to provide additional inputs for outlet pressure and inlet velocities.
