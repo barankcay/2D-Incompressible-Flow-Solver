@@ -3,6 +3,7 @@
 #include <fstream> // Include for file handling
 #include <iomanip> // Include for fixed precision formatting
 #include <cmath>
+#include <thread>
 #include <chrono>
 using namespace std;
 
@@ -434,7 +435,7 @@ int main()
     char q2;
     cin >> q2;
 
-    cout << "Is case a lid-driven cavity? (Y/N): ";
+    cout << "Is this a lid-driven cavity case? (Y/N): ";
     char q3;
     cin >> q3;
 
@@ -501,8 +502,10 @@ int main()
         double residualU = checkConvergence(field.u, uPrev, params);
         double residualV = checkConvergence(field.v, vPrev, params);
         double residualP = checkConvergence(field.p, pPrev, params);
+        std::this_thread::sleep_for(std::chrono::milliseconds(400));
+        cout << (field.u[(params.Ny - 1) / 2][1 + (params.Nx) / 2]) << endl;
 
-        cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << " n: " << n << endl;
+        // cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << " n: " << n << endl;
         if (residualU < params.timeTolerance && residualV < params.timeTolerance && residualP < params.timeTolerance)
         {
             cout << "Converged at time: " << t << endl;
@@ -510,11 +513,11 @@ int main()
         }
         n++;
     }
-    for (int j = 0; j < params.Ny - 2; j++)
-    {
+    // for (int j = 0; j < params.Ny - 2; j++)
+    // {
 
-        cout << field.ym[j] << " " << (field.u[j + 1][(params.Nx) / 2]) << endl;
-    }
+    //     cout << field.ym[j] << " " << (field.u[j + 1][(params.Nx) / 2]) << endl;
+    // }
     cout << endl;
 
     cout << params.timeStepSize << endl;
