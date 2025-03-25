@@ -51,7 +51,7 @@ The main program initializes parameters, runs the simulation loop, and outputs r
      - **Time Step Calculation**: Choose `(Y/N)` to calculate the time step size based on Courant and Peclet numbers. If `Y`, both Cr and Pe is included. If `N`, then only Cr is included.
      - **Write VTK File**: Choose `(Y/N)` to enable or disable `.vtk` file output.
      - **Lid-Driven Cavity Case**: Choose `(Y/N)` to specify the type of simulation.
-       - If `N`, the case becomes a channel flow case and ensure to provide additional inputs for outlet pressure and inlet velocities.
+       - If `N`, the case becomes a channel flow case and additional inputs for outlet pressure and inlet velocities are needed.
 
 6. **Output**:
    - The program will run the simulation and generate results, including a `.vtk` file for visualization.
