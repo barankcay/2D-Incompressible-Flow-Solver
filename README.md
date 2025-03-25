@@ -35,14 +35,14 @@ The main program initializes parameters, runs the simulation loop, and outputs r
 3. **Compile the Code**:
    - Use the following command to compile the code with optimizations:
      ```bash
-     g++ -std=c++17 .\v1_Final.cpp -o son.exe -O3 -ffast-math
+     g++ -std=c++17 .\v1_Final.cpp -o INS.exe -O3 -ffast-math
      ```
    - The `-O3` flag enables high-level optimizations, and `-ffast-math` allows faster floating-point calculations.
 
 4. **Run the Executable**:
    - Execute the compiled program:
      ```bash
-     .\son.exe
+     .\INS.exe
      ```
 
 5. **Answer the Prompts**:
