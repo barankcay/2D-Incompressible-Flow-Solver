@@ -26,6 +26,13 @@ struct constParameters
     double vLeftWall;   // v Velocity at the left wall
     double vRightWall;  // v Velocity at the right wall
 
+    double uInlet; // u velocity at the inlet
+    double vInlet; // v velocity at the inlet
+
+    double pressureOutlet; // Pressure at the outlet
+
+    double courantNumber; // Courant number used to calculate the time step size
+
     double poissonTolerance; // Tolerance for the Poisson equation solver
     double timeTolerance;    // Tolerance for the time loop convergence
 };
@@ -106,60 +113,114 @@ void createCoordinatesXYM(vector<double> &xm, vector<double> &ym, constParameter
     }
 }
 
-void setBoundaryConditions(int b, vector<vector<double>> &M, constParameters &params)
+void setBoundaryConditions(char q3, int b, vector<vector<double>> &M, constParameters &params)
 {
-    if (b == 0)
+    if (q3 == 'Y')
     {
-        for (int j = params.Ny - 1; j >= 0; j--)
+        if (b == 0)
         {
-            M[j][0] = M[j][1];                         // Left wall, dp/dx = 0
-            M[j][params.Nx - 1] = M[j][params.Nx - 2]; // Right wall, dp/dx = 0
+            for (int j = params.Ny - 1; j >= 0; j--)
+            {
+                M[j][0] = M[j][1];                         // Left wall, dp/dx = 0
+                M[j][params.Nx - 1] = M[j][params.Nx - 2]; // Right wall, dp/dx = 0
+            }
+            for (int i = params.Nx - 1; i >= 0; i--)
+            {
+                M[0][i] = M[1][i];                         // Bottom wall, dp/dy = 0
+                M[params.Ny - 1][i] = M[params.Ny - 2][i]; // Top wall, dp/dy = 0
+            }
         }
-        for (int i = params.Nx - 1; i >= 0; i--)
+        else if (b == 1)
         {
-            M[0][i] = M[1][i];                         // Bottom wall, dp/dy = 0
-            M[params.Ny - 1][i] = M[params.Ny - 2][i]; // Top wall, dp/dy = 0
+            for (int j = params.Ny - 1; j >= 0; j--)
+            {
+                M[j][0] = 0;             // Left wall,ghost cell,  u = 0
+                M[j][1] = 0;             // Left wall, u = 0
+                M[j][params.Nx - 1] = 0; // Right wall, u = 0
+            }
+            for (int i = params.Nx - 1; i >= 0; i--)
+            {
+                M[0][i] = 2 * params.uTopWall - M[1][i];                            // Top wall, ghost cell
+                M[params.Ny - 1][i] = 2 * params.uBottomWall - M[params.Ny - 2][i]; // Bottom wall, ghost cell
+            }
         }
-    }
-    else if (b == 1)
-    {
-        for (int j = params.Ny - 1; j >= 0; j--)
+        else if (b == 2)
         {
-            M[j][0] = 0;             // Left wall,ghost cell,  u = 0
-            M[j][1] = 0;             // Left wall, u = 0
-            M[j][params.Nx - 1] = 0; // Right wall, u = 0
-        }
-        for (int i = params.Nx - 1; i >= 0; i--)
-        {
-            M[0][i] = 2 * params.uTopWall - M[1][i];                            // Top wall, ghost cell
-            M[params.Ny - 1][i] = 2 * params.uBottomWall - M[params.Ny - 2][i]; // Bottom wall, ghost cell
-        }
-    }
-    else if (b == 2)
-    {
 
-        for (int i = params.Nx - 1; i >= 0; i--)
-        {
-            M[0][i] = 0;             // Top wall, v = 0
-            M[params.Ny - 1][i] = 0; // Bottom wall, v = 0
-            M[params.Ny - 2][i] = 0; // Bottom wall, ghost cell, v = 0
+            for (int i = params.Nx - 1; i >= 0; i--)
+            {
+                M[0][i] = 0;             // Top wall, v = 0
+                M[params.Ny - 1][i] = 0; // Bottom wall, v = 0
+                M[params.Ny - 2][i] = 0; // Bottom wall, ghost cell, v = 0
+            }
+            for (int j = params.Ny - 1; j >= 0; j--)
+            {
+                M[j][0] = 2 * params.vLeftWall - M[j][1];                          // Left wall, ghost cell
+                M[j][params.Nx - 1] = 2 * params.vRightWall - M[j][params.Nx - 2]; // Right wall, ghost cell
+            }
         }
-        for (int j = params.Ny - 1; j >= 0; j--)
-        {
-            M[j][0] = 2 * params.vLeftWall - M[j][1];                          // Left wall, ghost cell
-            M[j][params.Nx - 1] = 2 * params.vRightWall - M[j][params.Nx - 2]; // Right wall, ghost cell
-        }
+
+        M[0][0] = 0.5 * (M[0][1] + M[1][0]);                                                                         // Top left corner
+        M[0][params.Nx - 1] = 0.5 * (M[0][params.Nx - 2] + M[1][params.Nx - 1]);                                     // Top right corner
+        M[params.Ny - 1][0] = 0.5 * (M[params.Ny - 2][0] + M[params.Ny - 1][1]);                                     // Bottom left corner
+        M[params.Ny - 1][params.Nx - 1] = 0.5 * (M[params.Ny - 1][params.Nx - 2] + M[params.Ny - 2][params.Nx - 1]); // Bottom right corner
     }
 
-    M[0][0] = 0.5 * (M[0][1] + M[1][0]);                                                                         // Top left corner
-    M[0][params.Nx - 1] = 0.5 * (M[0][params.Nx - 2] + M[1][params.Nx - 1]);                                     // Top right corner
-    M[params.Ny - 1][0] = 0.5 * (M[params.Ny - 2][0] + M[params.Ny - 1][1]);                                     // Bottom left corner
-    M[params.Ny - 1][params.Nx - 1] = 0.5 * (M[params.Ny - 1][params.Nx - 2] + M[params.Ny - 2][params.Nx - 1]); // Bottom right corner
+    else if (q3 == 'N')
+    {
+        if (b == 0)
+        {
+            for (int j = params.Ny - 1; j >= 0; j--)
+            {
+                M[j][0] = M[j][1];                                                     // Left wall, dp/dx = 0
+                M[j][params.Nx - 1] = 2 * params.pressureOutlet - M[j][params.Nx - 2]; // Right wall, p=0
+            }
+            for (int i = params.Nx - 1; i >= 0; i--)
+            {
+                M[0][i] = M[1][i];                         // Bottom wall, dp/dy = 0
+                M[params.Ny - 1][i] = M[params.Ny - 2][i]; // Top wall, dp/dy = 0
+            }
+        }
+        else if (b == 1)
+        {
+            for (int j = params.Ny - 1; j >= 0; j--)
+            {
+                M[j][0] = 0;                               // Left wall,ghost cell,  u = 0
+                M[j][1] = params.uInlet;                   // Left wall, u = 0
+                M[j][params.Nx - 1] = M[j][params.Nx - 2]; // Right wall, du/dx = 0
+            }
+            for (int i = params.Nx - 1; i >= 0; i--)
+            {
+                M[0][i] = 2 * params.uTopWall - M[1][i];                            // Top wall, ghost cell
+                M[params.Ny - 1][i] = 2 * params.uBottomWall - M[params.Ny - 2][i]; // Bottom wall, ghost cell
+            }
+        }
+        else if (b == 2)
+        {
+
+            for (int i = params.Nx - 1; i >= 0; i--)
+            {
+                M[0][i] = 0;             // Top wall, v = 0
+                M[params.Ny - 1][i] = 0; // Bottom wall, v = 0
+                M[params.Ny - 2][i] = 0; // Bottom wall, ghost cell, v = 0
+            }
+            for (int j = params.Ny - 1; j >= 0; j--)
+            {
+                M[j][0] = 2 * params.vLeftWall - M[j][1];  // Left wall, ghost cell
+                M[j][params.Nx - 1] = M[j][params.Nx - 2]; // Right wall, ghost cell
+            }
+        }
+
+        M[0][0] = 0.5 * (M[0][1] + M[1][0]);                                                                         // Top left corner
+        M[0][params.Nx - 1] = 0.5 * (M[0][params.Nx - 2] + M[1][params.Nx - 1]);                                     // Top right corner
+        M[params.Ny - 1][0] = 0.5 * (M[params.Ny - 2][0] + M[params.Ny - 1][1]);                                     // Bottom left corner
+        M[params.Ny - 1][params.Nx - 1] = 0.5 * (M[params.Ny - 1][params.Nx - 2] + M[params.Ny - 2][params.Nx - 1]); // Bottom right corner
+    }
 }
 // PREDICTOR STEP
 // u* = un + Δt * ( ν ( ∂²un/∂x² + ∂²un/∂y² ) - ( un ∂un/∂x + v ∂un/∂y ) )
 // v* = vn + Δt * ( ν ( ∂²vn/∂x² + ∂²vn/∂y² ) - ( u ∂vn/∂x + vn ∂vn/∂y ) )
-void veloctiyStarCalculator(fields &field, constParameters &params)
+void veloctiyStarCalculator(char q3, fields &field, constParameters &params)
 {
     for (int i = 1; i < params.Nx - 1; i++)
     {
@@ -169,12 +230,12 @@ void veloctiyStarCalculator(fields &field, constParameters &params)
             field.vStar[j][i] = field.v[j][i] + params.timeStepSize * (params.kinematicViscosity * ((field.v[j][i + 1] - 2 * field.v[j][i] + field.v[j][i - 1]) / pow(params.hx, 2) + (field.v[j + 1][i] - 2 * field.v[j][i] + field.v[j - 1][i]) / pow(params.hy, 2)) - (field.v[j][i] * (field.v[j - 1][i] - field.v[j + 1][i]) / (2 * params.hy) + 0.25 * (field.u[j + 1][i] + field.u[j][i] + field.u[j + 1][i + 1] + field.u[j][i + 1]) * (field.v[j][i + 1] - field.v[j][i - 1]) / (2 * params.hx)));
         }
     }
-    setBoundaryConditions(1, field.uStar, params);
-    setBoundaryConditions(2, field.vStar, params);
+    setBoundaryConditions(q3, 1, field.uStar, params);
+    setBoundaryConditions(q3, 2, field.vStar, params);
 }
 // POISSON EQUATION SOLVER
 // ∇² p(n+1) = (ρ / Δt) * ∇ · u*
-void poissonEquationSolver(fields &field, constParameters &params)
+void poissonEquationSolver(char q3, fields &field, constParameters &params)
 {
     double residual = 1.0;
     int iteration = 0;
@@ -190,7 +251,7 @@ void poissonEquationSolver(fields &field, constParameters &params)
                 residual += abs(field.p[j][i] - pOld);
             }
         }
-        setBoundaryConditions(0, field.p, params);
+        setBoundaryConditions(q3, 0, field.p, params);
         residual /= (params.Nx * params.Ny);
         iteration++;
     }
@@ -200,20 +261,52 @@ void poissonEquationSolver(fields &field, constParameters &params)
 
 // TIME STEP SIZE CALCULATION
 // function to calculate the time step size based on the Courant number and Peclet number
-void updateTimeStepSize(fields &field, constParameters &params)
+void updateTimeStepSize(char q1, fields &field, constParameters &params)
 {
-    // Calculate the maximum velocity in the domain (including boundaries)
-    for (int i = 1; i < params.Nx - 1; i++)
+    if (q1 == 'Y')
     {
-        for (int j = 1; j < params.Ny - 1; j++)
+        // Calculate the maximum velocity in the domain (including boundaries)
+        for (int i = 1; i < params.Nx - 1; i++)
         {
-            double rule1 = (pow(params.hx, 2) * pow(params.hy, 2)) / (2 * params.dynamicViscosity * (pow(params.hx, 2) + pow(params.hy, 2)));
-            double rule2 = 2 * params.dynamicViscosity / (pow(field.u[j][i], 2) + pow(field.v[j][i], 2));
-            double finalRule = min(rule1, rule2);
-            if (finalRule < params.timeStepSize)
+            for (int j = 1; j < params.Ny - 1; j++)
             {
-                params.timeStepSize = finalRule;
+                double rule1 = (pow(params.hx, 2) * pow(params.hy, 2)) / (2 * params.dynamicViscosity * (pow(params.hx, 2) + pow(params.hy, 2)));
+                double rule2 = 2 * params.dynamicViscosity / (pow(field.u[j][i], 2) + pow(field.v[j][i], 2));
+                double finalRule = min(rule1, rule2);
+                if (finalRule < params.timeStepSize)
+                {
+                    params.timeStepSize = finalRule;
+                }
             }
+        }
+    }
+    else
+    {
+        double maxVelocity = 0.0;
+
+        // Calculate the maximum velocity in the domain (including boundaries)
+        for (int i = 0; i < params.Nx; i++)
+        {
+            for (int j = 0; j < params.Ny; j++)
+            {
+                double velocity = sqrt(pow(field.u[j][i], 2) + pow(field.v[j][i], 2));
+                if (velocity > maxVelocity)
+                {
+                    maxVelocity = velocity;
+                }
+            }
+        }
+
+        // Handle the case where maxVelocity is zero (initial time step)
+        if (maxVelocity == 0.0)
+        {
+            // Set a default time step size based on the grid spacing and Courant number
+            params.timeStepSize = params.courantNumber * min(params.hx, params.hy);
+        }
+        else
+        {
+            // Calculate the time step size based on the maximum velocity
+            params.timeStepSize = params.courantNumber * min(params.hx, params.hy) / maxVelocity;
         }
     }
 }
@@ -261,64 +354,99 @@ void swapFields(fields &field, constParameters &params)
         }
     }
 }
-
-void writeVTKFile(const fields &field, const constParameters &params, const string &filename)
+void writeVTKFile(char q2, const fields &field, const constParameters &params, const string &filename)
 {
-    ofstream vtkFile(filename);
-    if (!vtkFile.is_open())
+    if (q2 == 'N')
     {
-        cerr << "Error: Could not open file for writing: " << filename << endl;
         return;
     }
 
-    // VTK header
-    vtkFile << "# vtk DataFile Version 3.0\n";
-    vtkFile << "Channel Flow Simulation\n";
-    vtkFile << "ASCII\n";
-    vtkFile << "DATASET STRUCTURED_GRID\n";
-    vtkFile << "DIMENSIONS " << params.Nx - 2 << " " << params.Ny - 2 << " 1\n"; // Exclude ghost cells
-    vtkFile << "POINTS " << (params.Nx - 2) * (params.Ny - 2) << " float\n";
-
-    // Write grid points (excluding ghost cells)
-    for (int j = 1; j < params.Ny - 1; j++)
+    else
     {
-        for (int i = 1; i < params.Nx - 1; i++)
+        ofstream vtkFile(filename);
+        if (!vtkFile.is_open())
         {
-            vtkFile << field.xm[i - 1] << " " << field.ym[j - 1] << " 0.0\n";
+            cerr << "Error: Could not open file for writing: " << filename << endl;
+            return;
         }
-    }
 
-    // Write velocity and pressure data
-    vtkFile << "POINT_DATA " << (params.Nx - 2) * (params.Ny - 2) << "\n";
-    vtkFile << "VECTORS velocity float\n";
-    for (int j = 1; j < params.Ny - 1; j++)
-    {
-        for (int i = 1; i < params.Nx - 1; i++)
+        // VTK header
+        vtkFile << "# vtk DataFile Version 3.0\n";
+        vtkFile << "Channel Flow Simulation\n";
+        vtkFile << "ASCII\n";
+        vtkFile << "DATASET STRUCTURED_GRID\n";
+        vtkFile << "DIMENSIONS " << params.Nx - 2 << " " << params.Ny - 2 << " 1\n"; // Exclude ghost cells
+        vtkFile << "POINTS " << (params.Nx - 2) * (params.Ny - 2) << " float\n";
+
+        // Write grid points (excluding ghost cells)
+        for (int j = 1; j < params.Ny - 1; j++)
         {
-            vtkFile << field.u[j][i] << " " << field.v[j][i] << " 0.0\n";
+            for (int i = 1; i < params.Nx - 1; i++)
+            {
+                vtkFile << field.xm[i - 1] << " " << field.ym[j - 1] << " 0.0\n";
+            }
         }
-    }
 
-    vtkFile << "SCALARS pressure float 1\n";
-    vtkFile << "LOOKUP_TABLE default\n";
-    for (int j = 1; j < params.Ny - 1; j++)
-    {
-        for (int i = 1; i < params.Nx - 1; i++)
+        // Write velocity and pressure data
+        vtkFile << "POINT_DATA " << (params.Nx - 2) * (params.Ny - 2) << "\n";
+        vtkFile << "VECTORS velocity float\n";
+        for (int j = 1; j < params.Ny - 1; j++)
         {
-            vtkFile << field.p[j][i] << "\n";
+            for (int i = 1; i < params.Nx - 1; i++)
+            {
+                vtkFile << field.u[j][i] << " " << field.v[j][i] << " 0.0\n";
+            }
         }
-    }
 
-    vtkFile.close();
-    cout << "VTK file written: " << filename << endl;
+        vtkFile << "SCALARS pressure float 1\n";
+        vtkFile << "LOOKUP_TABLE default\n";
+        for (int j = 1; j < params.Ny - 1; j++)
+        {
+            for (int i = 1; i < params.Nx - 1; i++)
+            {
+                vtkFile << field.p[j][i] << "\n";
+            }
+        }
+
+        vtkFile.close();
+        cout << "VTK file written: " << filename << endl;
+    }
 }
-
 int main()
 {
     auto start = std::chrono::steady_clock::now();
-    double Re = 1000;
 
     constParameters params;
+    double Re;
+    cout << "Enter the Reynolds number: ";
+    cin >> Re;
+
+    cout << "Do you want to calculate the time step size based on the Courant number and Peclet number? (Y/N): ";
+    char q1;
+    cin >> q1;
+    if (q1 == 'N')
+    {
+        cout << "Enter the Courant number: ";
+        cin >> params.courantNumber;
+    }
+
+    cout << "Do you want to write the VTK file? (Y/N): ";
+    char q2;
+    cin >> q2;
+
+    cout << "Is case a lid-driven cavity? (Y/N): ";
+    char q3;
+    cin >> q3;
+
+    if (q3 == 'N')
+    {
+        cout << "Enter the pressure at the outlet: ";
+        cin >> params.pressureOutlet;
+        cout << "Enter the u velocity at the inlet: ";
+        cin >> params.uInlet;
+        cout << "Enter the v velocity at the inlet: ";
+        cin >> params.vInlet;
+    }
 
     params.density = 1.0;
     params.kinematicViscosity = 1.0 / Re;
@@ -330,15 +458,15 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 102;
-    params.Ny = 102;
+    params.Nx = 168;
+    params.Ny = 168;
     params.lengthX = 1;
     params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx - 2);
     params.hy = params.lengthY / (params.Ny - 2);
 
     params.poissonTolerance = 1e-3;
-    params.timeTolerance = 5e-7;
+    params.timeTolerance = 1e-6;
 
     params.startTime = 0;
     params.endTime = 10000;
@@ -351,9 +479,9 @@ int main()
     createCoordinatesXY(field.x, field.y, params);
     createCoordinatesXYM(field.xm, field.ym, params);
 
-    setBoundaryConditions(1, field.u, params);
-    setBoundaryConditions(2, field.v, params);
-    setBoundaryConditions(0, field.p, params);
+    setBoundaryConditions(q3, 1, field.u, params);
+    setBoundaryConditions(q3, 2, field.v, params);
+    setBoundaryConditions(q3, 0, field.p, params);
     int n = 0; // counter for the time steps
     for (double t = params.startTime; t <= params.endTime; t = t + params.timeStepSize)
     {
@@ -362,14 +490,14 @@ int main()
         vector<vector<double>> uPrev = field.u;
         vector<vector<double>> vPrev = field.v;
 
-        veloctiyStarCalculator(field, params);
-        poissonEquationSolver(field, params);
+        veloctiyStarCalculator(q3, field, params);
+        poissonEquationSolver(q3, field, params);
         velocityCorrector(field, params);
         swapFields(field, params);
-        setBoundaryConditions(1, field.u, params);
-        setBoundaryConditions(2, field.v, params);
-        setBoundaryConditions(0, field.p, params);
-        updateTimeStepSize(field, params);
+        setBoundaryConditions(q3, 1, field.u, params);
+        setBoundaryConditions(q3, 2, field.v, params);
+        setBoundaryConditions(q3, 0, field.p, params);
+        updateTimeStepSize(q1, field, params);
         double residualU = checkConvergence(field.u, uPrev, params);
         double residualV = checkConvergence(field.v, vPrev, params);
         double residualP = checkConvergence(field.p, pPrev, params);
@@ -396,6 +524,6 @@ int main()
     auto end = std::chrono::steady_clock::now();
     std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms." << std::endl;
     string vtkFilename = "LDC_final.vtk";
-    writeVTKFile(field, params, vtkFilename);
+    writeVTKFile(q2, field, params, vtkFilename);
     return 0;
 }
