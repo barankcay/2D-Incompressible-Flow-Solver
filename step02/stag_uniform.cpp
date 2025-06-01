@@ -501,7 +501,7 @@ int main()
 
     solverConfig cfg;
     cfg.density = 1.0;
-    cfg.Re = 400;
+    cfg.Re = 1000;
     cfg.kinematicViscosity = 1.0 / cfg.Re;
     cfg.dynamicViscosity = cfg.kinematicViscosity * cfg.density;
 
@@ -511,8 +511,8 @@ int main()
     cfg.vLeftWall = 0.0;
     cfg.vRightWall = 0.0;
 
-    cfg.Nx = 168;                        // Number of cells in the x-direction, including ghost cells
-    cfg.Ny = 168;                        // Number of cells in the y-direction, including ghost cells
+    cfg.Nx = 13;                         // Number of cells in the x-direction, including ghost cells
+    cfg.Ny = 13;                         // Number of cells in the y-direction, including ghost cells
     cfg.lengthX = 1;                     // Length of the domain in the x-direction, not including ghost cells
     cfg.lengthY = 1;                     // Length of the domain in the y-direction, not including ghost cells
     cfg.hx = cfg.lengthX / (cfg.Nx - 2); // Grid spacing in the x-direction

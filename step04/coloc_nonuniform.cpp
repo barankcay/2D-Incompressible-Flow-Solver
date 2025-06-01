@@ -899,7 +899,7 @@ int main()
     setBoundaryConditionsLDC(1, f.u, cfg);
     setBoundaryConditionsLDC(2, f.v, cfg);
     setBoundaryConditionsLDC(0, f.p, cfg);
-    cfg.timeStepSize = min((pow(cfg.smallestCellHeightX, 2) * pow(cfg.smallestCellHeightY, 2)) / (2 * cfg.dynamicViscosity * (pow(cfg.smallestCellHeightX, 2) + pow(cfg.smallestCellHeightY, 2))), 2 * cfg.dynamicViscosity / (pow(cfg.maxUvelocity, 2) + pow(cfg.maxVvelocity, 2)));
+    cfg.timeStepSize = min((pow(cfg.hx, 2) * pow(cfg.hy, 2)) / (2 * cfg.dynamicViscosity * (pow(cfg.hx, 2) + pow(cfg.hy, 2))), 2 * cfg.dynamicViscosity / (pow(cfg.uTopWall, 2) + pow(cfg.uTopWall, 2)));
     cout << "Initial time step size: " << cfg.timeStepSize << endl;
     // for (int j = 0; j < cfg.Nx; j++)
     // {
@@ -927,7 +927,7 @@ int main()
         setBoundaryConditionsLDC(1, f.u, cfg);
         setBoundaryConditionsLDC(2, f.v, cfg);
         setBoundaryConditionsLDC(0, f.p, cfg);
-        updateTimeStepSize(f, cfg);
+        // updateTimeStepSize(f, cfg);
         double residualU = checkConvergence(f.u, uPrev, cfg);
         double residualV = checkConvergence(f.v, vPrev, cfg);
         double residualP = checkConvergence(f.p, pPrev, cfg);

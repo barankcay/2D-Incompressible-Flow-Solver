@@ -34,6 +34,12 @@ struct solverConfig
     double vTopWall;    // u Velocity at the top wall
     double vBottomWall; // u Velocity at the bottom wall
 
+    double smallestCellHeightY; // height of the first cell for the non-uniform mesh
+    double smallestCellHeightX; // height of the first cell for the non-uniform mesh
+
+    double maxUvelocity;
+    double maxVvelocity;
+
     double uInlet; // u velocity at the inlet
     double vInlet; // v velocity at the inlet
 
@@ -100,12 +106,12 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, solverConfig &cfg)
 
     if (b == 0)
     {
-        for (int j = cfg.Ny - 1; j >= 0; j--)
+        for (int j = cfg.Ny - 2; j >= 1; j--)
         {
             M[j][0] = M[j][1];                   // Left wall, dp/dx = 0
             M[j][cfg.Nx - 1] = M[j][cfg.Nx - 2]; // Right wall, dp/dx = 0
         }
-        for (int i = cfg.Nx - 1; i >= 0; i--)
+        for (int i = cfg.Nx - 2; i >= 1; i--)
         {
             M[0][i] = M[1][i];                   // Bottom wall, dp/dy = 0
             M[cfg.Ny - 1][i] = M[cfg.Ny - 2][i]; // Top wall, dp/dy = 0
@@ -113,13 +119,13 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, solverConfig &cfg)
     }
     else if (b == 1)
     {
-        for (int j = cfg.Ny - 1; j >= 0; j--)
+        for (int j = cfg.Ny - 2; j >= 1; j--)
         {
             M[j][0] = 2 * cfg.uLeftWall - M[j][1]; // Left wall,ghost cell,  u = 0
 
             M[j][cfg.Nx - 1] = 2 * cfg.uRightWall - M[j][cfg.Nx - 2]; // Right wall, u = 0
         }
-        for (int i = cfg.Nx - 1; i >= 0; i--)
+        for (int i = cfg.Nx - 2; i >= 1; i--)
         {
             M[0][i] = 2 * cfg.uTopWall - M[1][i];                      // Top wall, ghost cell
             M[cfg.Ny - 1][i] = 2 * cfg.uBottomWall - M[cfg.Ny - 2][i]; // Bottom wall, ghost cell
@@ -128,12 +134,12 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, solverConfig &cfg)
     else if (b == 2)
     {
 
-        for (int i = cfg.Nx - 1; i >= 0; i--)
+        for (int i = cfg.Nx - 2; i >= 1; i--)
         {
             M[0][i] = 2 * cfg.vTopWall - M[1][i];                      // Top wall, v = 0
             M[cfg.Ny - 1][i] = 2 * cfg.vBottomWall - M[cfg.Ny - 2][i]; // Bottom wall, v = 0
         }
-        for (int j = cfg.Ny - 1; j >= 0; j--)
+        for (int j = cfg.Ny - 2; j >= 1; j--)
         {
             M[j][0] = 2 * cfg.vLeftWall - M[j][1];                    // Left wall, ghost cell
             M[j][cfg.Nx - 1] = 2 * cfg.vRightWall - M[j][cfg.Nx - 2]; // Right wall, ghost cell
@@ -224,6 +230,48 @@ void createVolume(fields &f, solverConfig &cfg)
     }
 }
 
+void smallestCellHeight(fields &f, solverConfig &cfg)
+{
+    cfg.smallestCellHeightY = f.y[1] - f.y[2];
+    cfg.smallestCellHeightX = f.x[2] - f.x[1];
+
+    for (int i = 2; i < cfg.Nx - 1; i++)
+    {
+        if (f.x[i + 1] - f.x[i] < cfg.smallestCellHeightX)
+        {
+            cfg.smallestCellHeightX = f.x[i + 1] - f.x[i];
+        }
+    }
+    for (int j = 2; j < cfg.Ny - 1; j++)
+    {
+        if (f.y[j] - f.y[j + 1] < cfg.smallestCellHeightY)
+        {
+            cfg.smallestCellHeightY = f.y[j] - f.y[j + 1];
+        }
+    }
+}
+
+void maximumVelocity(fields &f, solverConfig &cfg)
+{
+    cfg.maxUvelocity = f.u[0][0];
+    cfg.maxVvelocity = f.v[0][0];
+
+    for (int i = 0; i < cfg.Nx; i++)
+    {
+        for (int j = 0; j < cfg.Ny; j++)
+        {
+            if (f.u[j][i] > cfg.maxUvelocity)
+            {
+                cfg.maxUvelocity = f.u[j][i];
+            }
+            if (f.v[j][i] > cfg.maxVvelocity)
+            {
+                cfg.maxVvelocity = f.v[j][i];
+            }
+        }
+    }
+}
+
 void predictor(fields &f, solverConfig &cfg)
 {
     // Predictor step for the u velocity field
@@ -298,11 +346,11 @@ void updateTimeStepSize(fields &f, solverConfig &cfg)
 {
 
     // Calculate the maximum velocity in the domain (including boundaries)
-    for (int i = 1; i < cfg.Nx - 1; i++)
+    for (int i = 0; i < cfg.Nx; i++)
     {
-        for (int j = 1; j < cfg.Ny - 1; j++)
+        for (int j = 0; j < cfg.Ny; j++)
         {
-            double rule1 = (pow(cfg.hx, 2) * pow(cfg.hy, 2)) / (2 * cfg.dynamicViscosity * (pow(cfg.hx, 2) + pow(cfg.hy, 2)));
+            double rule1 = (pow(cfg.smallestCellHeightX, 2) * pow(cfg.smallestCellHeightY, 2)) / (2 * cfg.dynamicViscosity * (pow(cfg.smallestCellHeightX, 2) + pow(cfg.smallestCellHeightY, 2)));
             double rule2 = 2 * cfg.dynamicViscosity / (pow(f.u[j][i], 2) + pow(f.v[j][i], 2));
             double finalRule = min(rule1, rule2);
             if (finalRule < cfg.timeStepSize)
@@ -512,27 +560,30 @@ int main()
     cfg.vTopWall = 0.0;
     cfg.vBottomWall = 0.0;
 
-    cfg.Nx = 170;                        // Number of cells in the x-direction, including ghost cells
-    cfg.Ny = 170;                        // Number of cells in the y-direction, including ghost cells
-    cfg.lengthX = 9;                     // Length of the domain in the x-direction, not including ghost cells
+    cfg.Nx = 13;                         // Number of cells in the x-direction, including ghost cells
+    cfg.Ny = 13;                         // Number of cells in the y-direction, including ghost cells
+    cfg.lengthX = 1;                     // Length of the domain in the x-direction, not including ghost cells
     cfg.lengthY = 1;                     // Length of the domain in the y-direction, not including ghost cells
     cfg.hx = cfg.lengthX / (cfg.Nx - 2); // Grid spacing in the x-direction
     cfg.hy = cfg.lengthY / (cfg.Ny - 2); // Grid spacing in the y-direction
 
     cfg.poissonTolerance = 1e-4; // Tolerance for the Poisson equation solver
-    cfg.UtimeTolerance = 4e-05;  // Tolerance for the time loop convergence
-    cfg.VtimeTolerance = 4e-05;  // Tolerance for the time loop convergence
-    cfg.PtimeTolerance = 1e-08;  // Tolerance for the time loop convergence
+    cfg.UtimeTolerance = 1e-12;  // Tolerance for the time loop convergence
+    cfg.VtimeTolerance = 1e-12;  // Tolerance for the time loop convergence
+    cfg.PtimeTolerance = 1e-12;  // Tolerance for the time loop convergence
     cfg.startTime = 0.0;         // Start time of the simulation
     cfg.endTime = 10000.0;       // End time of the simulation. Since we have a convergence criteria, this is set to a large number
 
-    cfg.timeStepSize = min((pow(cfg.hx, 2) * pow(cfg.hy, 2)) / (2 * cfg.dynamicViscosity * (pow(cfg.hx, 2) + pow(cfg.hy, 2))), 2 * cfg.dynamicViscosity / (pow(cfg.uTopWall, 2) + pow(cfg.vLeftWall, 2)));
+    cfg.timeStepSize = min((pow(cfg.hx, 2) * pow(cfg.hy, 2)) / (2 * cfg.dynamicViscosity * (pow(cfg.hx, 2) + pow(cfg.hy, 2))), 2 * cfg.dynamicViscosity / (pow(cfg.uTopWall, 2) + pow(cfg.uTopWall, 2)));
 
     fields f(cfg.Nx, cfg.Ny);
 
     initialization(f, cfg);       // Initialize the fields
     createCoordinatesXY(f, cfg);  // Create the coordinates of the nodes of cells
     createCoordinatesXYM(f, cfg); // Create the coordinates of the cell centers
+    smallestCellHeight(f, cfg);   // Calculate the smallest cell height in the domain
+    maximumVelocity(f, cfg);      // Calculate the maximum velocity in the domain
+
     createArea(f, cfg);
     createVolume(f, cfg); // Create the volume of the cells
 
@@ -550,12 +601,13 @@ int main()
 
         predictor(f, cfg);
         pressurePoisson(f, cfg);
+        setBoundaryConditions(0, f.p, cfg);
         corrector(f, cfg);
         swapFields(f, cfg);
         setBoundaryConditions(1, f.u, cfg);
         setBoundaryConditions(2, f.v, cfg);
         setBoundaryConditions(0, f.p, cfg);
-        updateTimeStepSize(f, cfg);
+        // updateTimeStepSize(f, cfg);
         double residualU = checkConvergence(f.u, uPrev, cfg);
         double residualV = checkConvergence(f.v, vPrev, cfg);
         double residualP = checkConvergence(f.p, pPrev, cfg);
@@ -582,7 +634,7 @@ int main()
 
     for (int i = 0; i < cfg.Ny; i++)
     {
-        cout << f.ym[i] << " " << f.u[i][(cfg.Nx - 1) / 2] << endl;
+        cout << f.ym[i] << " " << f.p[i][(cfg.Nx - 1) / 2] << endl;
     }
 
     // for (int i = 0; i < cfg.Nx; i++)
