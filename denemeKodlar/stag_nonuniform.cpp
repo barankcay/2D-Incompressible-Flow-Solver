@@ -1005,7 +1005,7 @@ int main()
     setBoundaryConditionsLDC(1, f.u, cfg);
     setBoundaryConditionsLDC(2, f.v, cfg);
     setBoundaryConditionsLDC(0, f.p, cfg);
-    cfg.timeStepSize = min((pow(cfg.smallestCellHeightX, 2) * pow(cfg.smallestCellHeightY, 2)) / (2 * cfg.dynamicViscosity * (pow(cfg.smallestCellHeightX, 2) + pow(cfg.smallestCellHeightY, 2))), 2 * cfg.dynamicViscosity / (pow(cfg.maxUvelocity, 2) + pow(cfg.maxVvelocity, 2)));
+    cfg.timeStepSize = min((pow(cfg.smallestCellHeightX, 2) * pow(cfg.smallestCellHeightY, 2)) / (2 * cfg.dynamicViscosity * (pow(cfg.smallestCellHeightX, 2) + pow(cfg.smallestCellHeightY, 2))), 2 * cfg.dynamicViscosity / (pow(cfg.maxUvelocity, 2) + pow(cfg.maxUvelocity, 2)));
 
     // for (int j = 0; j < cfg.Nx; j++)
     // {

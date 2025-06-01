@@ -519,11 +519,11 @@ int main()
     cfg.hy = cfg.lengthY / (cfg.Ny - 2); // Grid spacing in the y-direction
 
     cfg.poissonTolerance = 1e-3; // Tolerance for the Poisson equation solver
-    cfg.timeTolerance = 1e-9;    // Tolerance for the time loop convergence
+    cfg.timeTolerance = 1e-12;   // Tolerance for the time loop convergence
     cfg.startTime = 0.0;         // Start time of the simulation
     cfg.endTime = 10000.0;       // End time of the simulation. Since we have a convergence criteria, this is set to a large number
 
-    cfg.timeStepSize = min((pow(cfg.hx, 2) * pow(cfg.hy, 2)) / (2 * cfg.dynamicViscosity * (pow(cfg.hx, 2) + pow(cfg.hy, 2))), 2 * cfg.dynamicViscosity / (pow(cfg.uTopWall, 2) + pow(cfg.vLeftWall, 2)));
+    cfg.timeStepSize = min((pow(cfg.hx, 2) * pow(cfg.hy, 2)) / (2 * cfg.dynamicViscosity * (pow(cfg.hx, 2) + pow(cfg.hy, 2))), 2 * cfg.dynamicViscosity / (pow(cfg.uTopWall, 2) + pow(cfg.uTopWall, 2)));
 
     fields f(cfg.Nx, cfg.Ny);
 
@@ -564,12 +564,13 @@ int main()
 
         predictor(f, cfg);
         pressurePoisson(f, cfg);
+        setBoundaryConditions(0, f.p, cfg);
         corrector(f, cfg);
         swapFields(f, cfg);
         setBoundaryConditions(1, f.u, cfg);
         setBoundaryConditions(2, f.v, cfg);
         setBoundaryConditions(0, f.p, cfg);
-        updateTimeStepSize(f, cfg);
+        // updateTimeStepSize(f, cfg);
         double residualU = checkConvergence(f.u, uPrev, cfg);
         double residualV = checkConvergence(f.v, vPrev, cfg);
         double residualP = checkConvergence(f.p, pPrev, cfg);
@@ -584,9 +585,10 @@ int main()
         }
         n++;
     }
-    for (int j = 1; j < cfg.Ny - 1; j++)
+    for (int j = 0; j < cfg.Ny; j++)
     {
-        cout << f.uy[j] << " " << (f.u[j][(cfg.Nx) / 2]) << endl;
+        // cout << f.py[j] << " " << 0.5 * (f.p[j][(cfg.Nx) / 2] + f.p[j][(cfg.Nx - 2) / 2]) << endl;
+        cout << f.py[j] << " " << f.p[j][(cfg.Nx - 1) / 2] << endl;
     }
     cout << endl;
 
