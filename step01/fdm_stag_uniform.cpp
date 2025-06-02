@@ -458,15 +458,15 @@ int main()
     params.vLeftWall = 0.0;
     params.vRightWall = 0.0;
 
-    params.Nx = 168;
-    params.Ny = 168;
+    params.Nx = 20;
+    params.Ny = 20;
     params.lengthX = 1;
     params.lengthY = 1;
     params.hx = params.lengthX / (params.Nx - 2);
     params.hy = params.lengthY / (params.Ny - 2);
 
     params.poissonTolerance = 1e-3;
-    params.timeTolerance = 1e-6;
+    params.timeTolerance = 1e-9;
 
     params.startTime = 0;
     params.endTime = 10000;
@@ -501,7 +501,7 @@ int main()
         double residualU = checkConvergence(field.u, uPrev, params);
         double residualV = checkConvergence(field.v, vPrev, params);
         double residualP = checkConvergence(field.p, pPrev, params);
-        std::this_thread::sleep_for(std::chrono::milliseconds(400));
+        // std::this_thread::sleep_for(std::chrono::milliseconds(400));
         cout << (field.u[(params.Ny - 1) / 2][1 + (params.Nx) / 2]) << endl;
 
         // cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << " n: " << n << endl;
@@ -512,11 +512,11 @@ int main()
         }
         n++;
     }
-    // for (int j = 0; j < params.Ny - 2; j++)
-    // {
+    for (int j = 0; j < params.Ny; j++)
+    {
 
-    //     cout << field.ym[j] << " " << (field.u[j + 1][(params.Nx) / 2]) << endl;
-    // }
+        cout << (field.u[j][(params.Nx) / 2]) << endl;
+    }
     cout << endl;
 
     cout << params.timeStepSize << endl;
