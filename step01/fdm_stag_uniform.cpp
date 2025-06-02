@@ -219,8 +219,7 @@ void setBoundaryConditions(char q3, int b, vector<vector<double>> &M, constParam
     }
 }
 // PREDICTOR STEP
-// u* = un + Δt * ( ν ( ∂²un/∂x² + ∂²un/∂y² ) - ( un ∂un/∂x + v ∂un/∂y ) )
-// v* = vn + Δt * ( ν ( ∂²vn/∂x² + ∂²vn/∂y² ) - ( u ∂vn/∂x + vn ∂vn/∂y ) )
+
 void veloctiyStarCalculator(char q3, fields &field, constParameters &params)
 {
     for (int i = 1; i < params.Nx - 1; i++)
