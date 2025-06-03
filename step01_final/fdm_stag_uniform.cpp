@@ -8,8 +8,8 @@
 using namespace std;
 
 //////////// THIS IS A 2D STAGGERED GRID FINITE DIFFERENCE METHOD FOR SIMULATING LID DRIVEN CAVITY FLOW ////////////
-//////////// VELOCITIES ARE STAGGERED AT THE NEGATIVE FACE CENTERS OF THE CELLS ////////////
-//////////// PRESSURE IS STAGGERED AT THE POSITIVE FACE CENTERS OF THE CELLS ////////////
+//////////// X DIRECTION VELOCITIES, U's, ARE PLACED TO THE LEFT OF THE PRESSURE NODES ////////////
+//////////// Y DIRECTION VELOCITIES, V's, ARE PLACED TO THE BOTTOM OF THE PRESSURE NODES ////////////
 //////////// GRID IS CONSTRUCTED USING UNIFORM GRID SPACING IN BOTH X AND Y DIRECTIONS ////////////
 
 //////////// TIME DISCRETIZATION IS DONE USING EULER EXPLICIT METHOD AND IS FIRST ORDER ACCURATE ////////////
@@ -29,70 +29,100 @@ int main()
 {
     auto start = std::chrono::steady_clock::now();
 
+    //////////////////////////////////////////////////
     ////////// CREATION OF FIELD PARAMETERS //////////
+    //////////////////////////////////////////////////
     vector<vector<double>> u;     // u velocity field
     vector<vector<double>> uStar; // intermediate u velocity field
-    vector<vector<double>> uNew;  // next time step u velocity field
     vector<vector<double>> v;     // v velocity field
     vector<vector<double>> vStar; // intermediate v velocity field
-    vector<vector<double>> vNew;  // next time step v velocity field
     vector<vector<double>> p;     // pressure field
+    //--------------END-OF-THE-SECTION------------------------//
 
-    ////////// CHARACTERISTICS OF THE FLOW
-    double Re = 1000;
-    double density = 1.0;
-    double kinematicViscosity = 1.0 / Re;
-    double dynamicViscosity = kinematicViscosity * density;
 
-    //////////// VELOCITY BOUNDARY CONDITIONS FOR THE LID DRIVEN CAVITY FLOW ////////////
-    double uTopWall = 1;
-    double uBottomWall = 0.0;
-    double uLeftWall = 0.0;
-    double uRightWall = 0.0;
-    double vTopWall = 0.0;
-    double vBottomWall = 0.0;
-    double vLeftWall = 0.0;
-    double vRightWall = 0.0;
+    //////////////////////////////////////////////////
+    ////////// CHARACTERISTICS OF THE FLOW ///////////
+    //////////////////////////////////////////////////
+    double Re                   = 1000;
+    double density              = 1.0;
+    double kinematicViscosity   = 1.0 / Re;
+    double dynamicViscosity     = kinematicViscosity * density;
 
-    //////////// GRID PARAMETERS ////////////
+    //--------------END-OF-THE-SECTION------------------------//
+
+
+    //////////////////////////////////////////////////
+    ////////// BOUNDARY CONDITIONS //////////////////
+    //////////////////////////////////////////////////
+    double uTopWall     = 1.0; // Velocity at the top wall
+    double uBottomWall  = 0.0;
+    double uLeftWall    = 0.0;
+    double uRightWall   = 0.0;
+    double vTopWall     = 0.0;
+    double vBottomWall  = 0.0;
+    double vLeftWall    = 0.0;
+    double vRightWall   = 0.0;
+    //--------------END-OF-THE-SECTION------------------------//
+
+
+    //////////////////////////////////////////////////
+    ////////// GRID PARAMETERS ///////////////////////
+    //////////////////////////////////////////////////
+    // lengthx and lengthy are the lengths of the domain in the x and y directions, not including ghost nodes
+    double lengthX      = 1;
+    double lengthY      = 1;
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx = 20;
-    int Ny = 20;
+    int Nx              = 20;
+    double h            = lengthX / (Nx - 2);
+    int Ny              = (lengthY / h) + 2; // +2 for ghost cells
+    //!!!!!! Since uniform grid spacing is used, this way of calculating Ny is still valid.
+    //!!!!!! If the domain is square, Nx and Ny will be equal
+    //!!!!!! For non square domains, this approach still gives uniform grid spacing in both x and y directions.
+    //--------------END-OF-THE-SECTION------------------------//
+    
 
-    // lengthX and lengthY are the lengths of the domain in the x and y directions, not including ghost cells
-    double lengthX = 1;
-    double lengthY = 1;
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////// AVERAGE CHANGE LIMITS OF PARAMETERS OF THE SIMULATION AND PRESSURE POISSON EQ  /////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    double GSchangeAve     = 1e-3;
+    double pChangeAve      = 1e-9;
+    double uChangeAve      = 1e-9;
+    double vChangeAve      = 1e-9;
+    //--------------END-OF-THE-SECTION------------------------//
 
-    // hx and hy are the grid spacings in the x and y directions
-    double hx = lengthX / (Nx - 2);
-    double hy = lengthY / (Ny - 2);
-
-    //////////// CONVERGENCE PARAMETERS OF THE SIMULATION AND PRESSURE POISSON EQ ////////////
-    double poissonTolerance = 1e-3;
-    double P_residualLimit = 1e-9;
-    double U_residualLimit = 1e-9;
-    double V_residualLimit = 1e-9;
-
-    //////////// TIME PARAMETERS ////////////
+    
+    //////////////////////////////////////////////////////////
+    //////////// TIME PARAMETERS OF THE SIMULATION////////////
+    //////////////////////////////////////////////////////////
     // Time starts at 0 and ends at endTime
-    double startTime = 0;
+    double startTime    = 0;
     // EndTime should be set to a large number since we have a convergence criteria
     // This can be changed to a specific time if needed
-    double endTime = 10000;
+    double endTime      = 10000;
+    //--------------END-OF-THE-SECTION------------------------//
 
-    ///////////// TIME STEP SIZE CALCULATION ////////////
-    // CRITERIA 1 ===> hx^2 * hy^2 / (2 * dynamicViscosity * (hx^2 + hy^2))
+
+
+    //////////////////////////////////////////////////////////
+    //////////// TIME STEP SIZE CALCULATION///////////////////
+    //////////////////////////////////////////////////////////
+    // CRITERIA 1 ===> h^2 * h^2 / (2 * dynamicViscosity * (h^2 + h^2))
     // CRITERIA 2 ===> 2 * dynamicViscosity / (uTopWall^2 + vLeftWall^2)
-    double timeStepSize = min((pow(hx, 2) * pow(hy, 2)) / (2 * dynamicViscosity * (pow(hx, 2) + pow(hy, 2))), 2 * dynamicViscosity / (pow(uTopWall, 2) + pow(vLeftWall, 2)));
+    // The time step size is calculated using the minimum of the two criteria
+    // Lid driven cavity is constructed with 3 walls.
+    // So, velocity boundary conditions are applicable only to the top wall.
+    // For time step size calculation, we consider the top wall velocities only.  
+    double timeStepSize = min((h*h/4*dynamicViscosity), 2 * dynamicViscosity / (uTopWall*uTopWall + vTopWall*vTopWall));
+    //--------------END-OF-THE-SECTION------------------------//
+
+
 
     //////////// INITIALIZATION and ASSIGNING DIMENSION OF THE FIELDS ////////////
     // Initialize the fields with the number of cells in the x and y directions
-    u.resize(Ny, vector<double>(Nx));
-    uStar.resize(Ny, vector<double>(Nx));
-    uNew.resize(Ny, vector<double>(Nx));
-    vStar.resize(Ny, vector<double>(Nx));
-    vNew.resize(Ny, vector<double>(Nx));
-    v.resize(Ny, vector<double>(Nx));
+    u.resize(Ny, vector<double>(Nx+1));
+    uStar.resize(Ny, vector<double>(Nx+1));
+    vStar.resize(Ny+1, vector<double>(Nx));
+    v.resize(Ny+1, vector<double>(Nx));
     p.resize(Ny, vector<double>(Nx));
 
     for (int i = 0; i < Nx; i++)
@@ -104,8 +134,6 @@ int main()
             p[j][i] = 0;
             uStar[j][i] = 0;
             vStar[j][i] = 0;
-            uNew[j][i] = 0;
-            vNew[j][i] = 0;
         }
     }
     //////////// END OF INITIALIZATION ////////////
@@ -125,14 +153,31 @@ int main()
         vector<vector<double>> vPrev = v;
 
         //////// PREDICTOR STEP //////
-        for (int i = 1; i < Nx - 1; i++)
+        for (int i = 1; i < Nx ; i++)
         {
             for (int j = 1; j < Ny - 1; j++)
             {
-                uStar[j][i] = u[j][i] + timeStepSize * (kinematicViscosity * ((u[j][i + 1] - 2 * u[j][i] + u[j][i - 1]) / pow(hx, 2) + (u[j + 1][i] - 2 * u[j][i] + u[j - 1][i]) / pow(hy, 2)) - (u[j][i] * (u[j][i + 1] - u[j][i - 1]) / (2 * hx) + 0.25 * (v[j][i - 1] + v[j][i] + v[j - 1][i - 1] + v[j - 1][i]) * (u[j - 1][i] - u[j + 1][i]) / (2 * hy)));
-                vStar[j][i] = v[j][i] + timeStepSize * (kinematicViscosity * ((v[j][i + 1] - 2 * v[j][i] + v[j][i - 1]) / pow(hx, 2) + (v[j + 1][i] - 2 * v[j][i] + v[j - 1][i]) / pow(hy, 2)) - (v[j][i] * (v[j - 1][i] - v[j + 1][i]) / (2 * hy) + 0.25 * (u[j + 1][i] + u[j][i] + u[j + 1][i + 1] + u[j][i + 1]) * (v[j][i + 1] - v[j][i - 1]) / (2 * hx)));
+                double uAdvectX = u[j][i] * (u[j][i + 1] - u[j][i - 1]) / (2 * h);                                                        // u * du/dx (advection in X for u)
+                double uAdvectY = 0.25 * (v[j][i - 1] + v[j][i] + v[j + 1][i - 1] + v[j + 1][i]) * (u[j - 1][i] - u[j + 1][i]) / (2 * h); // v * du/dy (advection in Y for u)
+                double uDiffuseX = (u[j][i + 1] - 2 * u[j][i] + u[j][i - 1]) / (h * h);                                                   // d²u/dx² (diffusion in X for u)
+                double uDiffuseY = (u[j + 1][i] - 2 * u[j][i] + u[j - 1][i]) / (h * h);                                                   // d²u/dy² (diffusion in Y for u)
+                uStar[j][i] = u[j][i] + timeStepSize * (kinematicViscosity * (uDiffuseX + uDiffuseY) - (uAdvectX + uAdvectY));
             }
         }
+
+        for (int i = 1; i < Nx-1; i++)
+        {
+            for (int j = 1; j < Ny; j++)
+            {
+                double vAdvectX = 0.25 * (u[j -1][i] + u[j][i] + u[j -1][i + 1] + u[j][i + 1]) * (v[j][i + 1] - v[j][i - 1]) / (2 * h); // u * dv/dx (advection in X for v)
+                double vAdvectY = v[j][i] * (v[j - 1][i] - v[j + 1][i]) / (2 * h);                                                        // v * dv/dy (advection in Y for v)
+                double vDiffuseX = (v[j][i + 1] - 2 * v[j][i] + v[j][i - 1]) / (h * h);                                                   // d²v/dx² (diffusion in X for v)
+                double vDiffuseY = (v[j + 1][i] - 2 * v[j][i] + v[j - 1][i]) / (h * h);                                                   // d²v/dy² (diffusion in Y for v)
+                vStar[j][i] = v[j][i] + timeStepSize * (kinematicViscosity * (vDiffuseX + vDiffuseY) - (vAdvectX + vAdvectY));
+            }
+            
+        }
+        
         setBoundaryConditions(1, uStar, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
         setBoundaryConditions(2, vStar, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
 
@@ -140,33 +185,52 @@ int main()
         ////////// POISSON EQUATION SOLVER //////////
         double residual = 1.0;
         int iteration = 0;
-        while (residual > poissonTolerance)
+        while (residual > GSchangeAve)
         {
-            residual = 0;
+            vector<vector<double>> pOld = p; // Store the old pressure values for convergence check
             for (int i = 1; i < Nx - 1; i++)
             {
                 for (int j = 1; j < Ny - 1; j++)
                 {
-                    double pOld = p[j][i];
-                    p[j][i] = (pow(hy, 2) * pow(hx, 2) / (2 * (pow(hx, 2) + pow(hy, 2)))) * (((p[j][i + 1] + p[j][i - 1]) / pow(hx, 2)) + ((p[j - 1][i] + p[j + 1][i]) / pow(hy, 2)) - ((density / timeStepSize) * ((uStar[j][i + 1] - uStar[j][i]) / (hx) + (vStar[j - 1][i] - vStar[j][i]) / (hy))));
-                    residual += abs(p[j][i] - pOld);
+                    double laplacianP = (p[j][i + 1] + p[j][i - 1] + p[j - 1][i] + p[j + 1][i]) / (h*h); // Laplacian of pressure
+                    double uStarGradX = (uStar[j][i + 1] - uStar[j][i]) / (h); // Gradient of uStar in X direction
+                    double vStarGradY = (vStar[j][i] - vStar[j+1][i]) / (h); // Gradient of vStar in Y direction
+                    p[j][i] =((h*h)/4)*(laplacianP - (density / timeStepSize) * (uStarGradX + vStarGradY)); // Update pressure using the Poisson equation
                 }
             }
-            setBoundaryConditions(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
-            residual /= (Nx * Ny);
+            residual = 0.0; // Reset residual for each iteration
+            for (int i = 1; i < Nx-1; i++)
+            {
+                for (int j = 1; j < Ny-1; j++)
+                {
+                    // Calculate the residual
+                    residual =residual+ abs(p[j][i] - pOld[j][i]);
+                }
+                
+            }
+            residual =residual/(Nx * Ny);
             iteration++;
+            setBoundaryConditions(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+
         }
         ////// END OF POISSON EQUATION SOLVER ///////
 
         cout << "Number of iterations for Poisson equation: " << iteration << endl;
 
         //////////// CORRECTOR STEP ////////////
-        for (int i = 1; i < Nx - 1; i++)
+        for (int i = 1; i < Nx ; i++)
         {
             for (int j = 1; j < Ny - 1; j++)
             {
-                u[j][i] = uStar[j][i] - (timeStepSize / density) * ((p[j][i] - p[j][i - 1]) / (hx));
-                v[j][i] = vStar[j][i] - (timeStepSize / density) * ((p[j][i] - p[j + 1][i]) / (hy));
+                u[j][i] = uStar[j][i] - (timeStepSize / density) * ((p[j][i] - p[j][i - 1]) / (h));
+                
+            }
+        }
+        for (int i = 1; i < Nx - 1; i++)
+        {
+            for (int j = 1; j < Ny ; j++)
+            {
+                v[j][i] = vStar[j][i] - (timeStepSize / density) * ((p[j][i] - p[j - 1][i]) / (h));
             }
         }
         setBoundaryConditions(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
@@ -189,7 +253,7 @@ int main()
         residualP /= (Nx * Ny);
 
         // cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << " n: " << n << endl;
-        if (residualU < U_residualLimit && residualV < V_residualLimit && residualP < P_residualLimit)
+        if (residualU < uChangeAve && residualV < vChangeAve && residualP < pChangeAve)
         {
             cout << "Converged at time: " << t << endl;
             break;
@@ -232,8 +296,8 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, double uTopWall, do
     {
         for (int j = Ny - 1; j >= 0; j--)
         {
-            
-            M[j][1] = uLeftWall;      // Left wall, u = 0
+
+            M[j][1] = uLeftWall;       // Left wall, u = 0
             M[j][Nx - 1] = uRightWall; // Right wall, u = 0
         }
         for (int i = Nx - 1; i >= 0; i--)
@@ -247,7 +311,7 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, double uTopWall, do
 
         for (int i = Nx - 1; i >= 0; i--)
         {
-            M[0][i] = vTopWall;      // Top wall, v = 0
+            M[0][i] = vTopWall; // Top wall, v = 0
 
             M[Ny - 2][i] = vBottomWall; // Bottom wall, ghost cell, v = 0
         }
