@@ -1,0 +1,7 @@
+step01: First FDM code (staggered uniform mesh, only LDC)
+step02: First FVM code (staggered uniform mesh, only LDC)
+step03: FVM code (similar to above, but also solves channel flow with velocity inlet, pressure outlet)
+step04: FVM code (similar to above, but works on colocated meshes. No stabilization for checkerboard pressure)
+step05: FVM code (similar to above, but with stabilization for checkerboard pressure)
+
+step06: FVM code (similar to above, but can use Cartesian, non-uniforms meshes)
