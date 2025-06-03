@@ -232,9 +232,9 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, double uTopWall, do
     {
         for (int j = Ny - 1; j >= 0; j--)
         {
-            M[j][0] = 0;      // Left wall,ghost cell,  u = 0
-            M[j][1] = 0;      // Left wall, u = 0
-            M[j][Nx - 1] = 0; // Right wall, u = 0
+            
+            M[j][1] = uLeftWall;      // Left wall, u = 0
+            M[j][Nx - 1] = uRightWall; // Right wall, u = 0
         }
         for (int i = Nx - 1; i >= 0; i--)
         {
@@ -247,9 +247,9 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, double uTopWall, do
 
         for (int i = Nx - 1; i >= 0; i--)
         {
-            M[0][i] = 0;      // Top wall, v = 0
-            M[Ny - 1][i] = 0; // Bottom wall, v = 0
-            M[Ny - 2][i] = 0; // Bottom wall, ghost cell, v = 0
+            M[0][i] = vTopWall;      // Top wall, v = 0
+
+            M[Ny - 2][i] = vBottomWall; // Bottom wall, ghost cell, v = 0
         }
         for (int j = Ny - 1; j >= 0; j--)
         {
