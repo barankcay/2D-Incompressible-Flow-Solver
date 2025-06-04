@@ -72,9 +72,10 @@ int main()
     double lengthX      = 1;
     double lengthY      = 1;
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx              = 20;
+    int Nx              = 120;
+	int Ny				=120;
     double h            = lengthX / (Nx - 2);
-    int Ny              = (lengthY / h) + 2; // +2 for ghost cells
+    // int Ny              = (lengthY / h) + 2; // +2 for ghost cells
     //!!!!!! Since uniform grid spacing is used, this way of calculating Ny is still valid.
     //!!!!!! If the domain is square, Nx and Ny will be equal
     //!!!!!! For non square domains, this approach still gives uniform grid spacing in both x and y directions.
@@ -112,7 +113,7 @@ int main()
     // Lid driven cavity is constructed with 3 walls.
     // So, velocity boundary conditions are applicable only to the top wall.
     // For time step size calculation, we consider the top wall velocities only.  
-    double timeStepSize = min((h*h/4*dynamicViscosity), 2 * dynamicViscosity / (uTopWall*uTopWall + vTopWall*vTopWall));
+    double timeStepSize = min((h*h)/(4*dynamicViscosity), 2 * dynamicViscosity / (uTopWall*uTopWall + vTopWall*vTopWall));
     //--------------END-OF-THE-SECTION------------------------//
 
 
@@ -127,13 +128,31 @@ int main()
 
     for (int i = 0; i < Nx; i++)
     {
+        for (int j = 0; j < Ny+1; j++)
+        {
+
+            v[j][i] = 0;
+
+            vStar[j][i] = 0;
+        }
+    }
+	for (int i = 0; i < Nx+1; i++)
+    {
         for (int j = 0; j < Ny; j++)
         {
             u[j][i] = 0;
-            v[j][i] = 0;
-            p[j][i] = 0;
+
             uStar[j][i] = 0;
-            vStar[j][i] = 0;
+
+        }
+    }
+	for (int i = 0; i < Nx; i++)
+    {
+        for (int j = 0; j < Ny; j++)
+        {
+
+            p[j][i] = 0;
+
         }
     }
     //////////// END OF INITIALIZATION ////////////
@@ -147,6 +166,7 @@ int main()
     int n = 0; // counter for the time steps
     for (double t = startTime; t <= endTime; t = t + timeStepSize)
     {
+
         //////////// PREVIOUS FIELDS ARE STORED FOR CONVERGENCE CHECK ///////////
         vector<vector<double>> pPrev = p;
         vector<vector<double>> uPrev = u;
@@ -192,10 +212,10 @@ int main()
             {
                 for (int j = 1; j < Ny - 1; j++)
                 {
-                    double laplacianP = (p[j][i + 1] + p[j][i - 1] + p[j - 1][i] + p[j + 1][i]) / (h*h); // Laplacian of pressure
+                    //double laplacianP = (p[j][i + 1] + p[j][i - 1] + p[j - 1][i] + p[j + 1][i]) / (h*h); // Laplacian of pressure
                     double uStarGradX = (uStar[j][i + 1] - uStar[j][i]) / (h); // Gradient of uStar in X direction
                     double vStarGradY = (vStar[j][i] - vStar[j+1][i]) / (h); // Gradient of vStar in Y direction
-                    p[j][i] =((h*h)/4)*(laplacianP - (density / timeStepSize) * (uStarGradX + vStarGradY)); // Update pressure using the Poisson equation
+                    p[j][i] =0.25*(p[j][i + 1] + p[j][i - 1] + p[j - 1][i] + p[j + 1][i]) - (h*h*0.25*density / timeStepSize) * (uStarGradX + vStarGradY); // Update pressure using the Poisson equation
                 }
             }
             residual = 0.0; // Reset residual for each iteration
@@ -230,7 +250,7 @@ int main()
         {
             for (int j = 1; j < Ny ; j++)
             {
-                v[j][i] = vStar[j][i] - (timeStepSize / density) * ((p[j][i] - p[j - 1][i]) / (h));
+                v[j][i] = vStar[j][i] - (timeStepSize / density) * ((p[j-1][i] - p[j][i]) / (h));
             }
         }
         setBoundaryConditions(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
@@ -243,14 +263,14 @@ int main()
         {
             for (int j = 1; j < Ny - 1; j++)
             {
-                residualU += abs(u[j][i] - uPrev[j][i]);
-                residualV += abs(v[j][i] - vPrev[j][i]);
-                residualP += abs(p[j][i] - pPrev[j][i]);
+                residualU = residualU+abs(u[j][i] - uPrev[j][i]);
+                residualV =residualV+ abs(v[j][i] - vPrev[j][i]);
+                residualP = residualP+abs(p[j][i] - pPrev[j][i]);
             }
         }
-        residualU /= (Nx * Ny);
-        residualV /= (Nx * Ny);
-        residualP /= (Nx * Ny);
+        residualU =residualU/(Nx * Ny);
+        residualV = residualV/(Nx * Ny);
+        residualP =residualP/(Nx * Ny);
 
         // cout << "Time: " << t << " U velocity: " << residualU << " V velocity: " << residualV << " pressure: " << residualP << " n: " << n << endl;
         if (residualU < uChangeAve && residualV < vChangeAve && residualP < pChangeAve)
@@ -259,6 +279,7 @@ int main()
             break;
         }
         n++;
+		
     }
     for (int j = 0; j < Ny; j++)
     {
@@ -281,49 +302,60 @@ void setBoundaryConditions(int b, vector<vector<double>> &M, double uTopWall, do
 
     if (b == 0)
     {
-        for (int j = Ny - 1; j >= 0; j--)
+        for (int j = Ny - 2; j >= 1; j--)
         {
             M[j][0] = M[j][1];           // Left wall, dp/dx = 0
             M[j][Nx - 1] = M[j][Nx - 2]; // Right wall, dp/dx = 0
         }
-        for (int i = Nx - 1; i >= 0; i--)
+        for (int i = Nx - 2; i >= 1; i--)
         {
             M[0][i] = M[1][i];           // Bottom wall, dp/dy = 0
             M[Ny - 1][i] = M[Ny - 2][i]; // Top wall, dp/dy = 0
         }
+		M[0][0] = 0.5 * (M[0][1] + M[1][0]);                               // Top left corner
+		M[0][Nx-1 ] = 0.5 * (M[0][Nx - 2] + M[1][Nx-1 ]);                // Top right corner
+		M[Ny - 1][0] = 0.5 * (M[Ny - 2][0] + M[Ny - 1][1]);                // Bottom left corner
+		M[Ny - 1][Nx - 1] = 0.5 * (M[Ny - 1][Nx - 2] + M[Ny - 2][Nx - 1]); // Bottom right corner
     }
     else if (b == 1)
     {
-        for (int j = Ny - 1; j >= 0; j--)
+        for (int j = Ny - 2; j >= 1; j--)
         {
-
             M[j][1] = uLeftWall;       // Left wall, u = 0
+			M[j][0]=2*M[j][1]-M[j][2];
             M[j][Nx - 1] = uRightWall; // Right wall, u = 0
+			M[j][Nx] = 2*M[j][Nx-1]-M[j][Nx-2];
         }
-        for (int i = Nx - 1; i >= 0; i--)
+        for (int i = Nx - 1; i >= 1; i--)
         {
             M[0][i] = 2 * uTopWall - M[1][i];              // Top wall, ghost cell
             M[Ny - 1][i] = 2 * uBottomWall - M[Ny - 2][i]; // Bottom wall, ghost cell
         }
+		M[0][0] = 0.5 * (M[0][1] + M[1][0]);                               // Top left corner
+		M[0][Nx ] = 0.5 * (M[0][Nx - 1] + M[1][Nx ]);                // Top right corner
+		M[Ny - 1][0] = 0.5 * (M[Ny - 2][0] + M[Ny - 1][1]);                // Bottom left corner
+		M[Ny - 1][Nx - 1] = 0.5 * (M[Ny - 1][Nx - 2] + M[Ny - 2][Nx - 1]); // Bottom right corner
     }
     else if (b == 2)
     {
 
-        for (int i = Nx - 1; i >= 0; i--)
+        for (int i = Nx - 2; i >= 1; i--)
         {
-            M[0][i] = vTopWall; // Top wall, v = 0
+			M[1][i]=vTopWall;
+            M[0][i] = 2*M[1][i]-M[2][i]; // Top wall, v = 0
 
-            M[Ny - 2][i] = vBottomWall; // Bottom wall, ghost cell, v = 0
+            M[Ny - 1][i] = vBottomWall; // Bottom wall, ghost cell, v = 0
+			M[Ny][i]=2*M[Ny - 1][i]-M[Ny - 2][i];
         }
-        for (int j = Ny - 1; j >= 0; j--)
+        for (int j = Ny - 1; j >= 1; j--)
         {
             M[j][0] = 2 * vLeftWall - M[j][1];            // Left wall, ghost cell
             M[j][Nx - 1] = 2 * vRightWall - M[j][Nx - 2]; // Right wall, ghost cell
         }
+		M[0][0] = 0.5 * (M[0][1] + M[1][0]);                               // Top left corner
+		M[0][Nx-1] = 0.5 * (M[0][Nx - 2] + M[1][Nx - 1]);                // Top right corner
+		M[Ny][0] = 0.5 * (M[Ny - 1][0] + M[Ny][1]);                // Bottom left corner
+		M[Ny][Nx] = 0.5 * (M[Ny][Nx - 1] + M[Ny - 1][Nx]); // Bottom right corner
     }
 
-    M[0][0] = 0.5 * (M[0][1] + M[1][0]);                               // Top left corner
-    M[0][Nx - 1] = 0.5 * (M[0][Nx - 2] + M[1][Nx - 1]);                // Top right corner
-    M[Ny - 1][0] = 0.5 * (M[Ny - 2][0] + M[Ny - 1][1]);                // Bottom left corner
-    M[Ny - 1][Nx - 1] = 0.5 * (M[Ny - 1][Nx - 2] + M[Ny - 2][Nx - 1]); // Bottom right corner
 }
