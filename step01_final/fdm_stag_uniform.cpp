@@ -38,9 +38,9 @@ using namespace std;
 ////// int b is the flow field type:
 ////// 0 - pressure, 1 - u velocity, 2 - v velocity
 ////// For lid driven cavity, ALL OF THE DIRICHLET BOUNDARY CONDITIONS ARE VELOCITIES
-////// So, input of velocity values are required for function call
+////// So, specific input of velocity values are required for function call
 ////// Pressure boundary conditions are all Neumann, which means there is not a specific pressure value at the boundaries
-void ghostNodeValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny);
+void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny);
 
 int main()
 {
@@ -55,12 +55,29 @@ int main()
     vector<vector<double>> v;     // v velocity field
     vector<vector<double>> vStar; // intermediate v velocity field
     vector<vector<double>> p;     // pressure field
+    vector<vector<double>> pPrev; // previous pressure field for convergence check
+    vector<vector<double>> pOld; // old pressure field for Gauss-Seidel method
+
+    vector<vector<double>> uPrev; // previous u velocity field for convergence check
+    vector<vector<double>> vPrev; // previous v velocity field for convergence check
+
+    double uAdvectX; // u * du/dx (advection in X for u)
+    double uAdvectY; // v * du/dy (advection in Y for u)
+    double vAdvectX; // u * dv/dx (advection in X for v)
+    double vAdvectY; // v * dv/dy (advection in Y for v)
+
+    double uDiffuse; // d²u/dx² + d²u/dy² (diffusion in X and Y for u)
+    double vDiffuse; // d²v/dx² + d²v/dy² (diffusion in X and Y for v)
+
+    double uStarGradX; // Gradient of uStar in X direction  du*/dx
+    double vStarGradY; // Gradient of vStar in Y direction  dv*/dy
+    
     //--------------END-OF-THE-SECTION------------------------//
 
     //////////////////////////////////////////////////
     ////////// CHARACTERISTICS OF THE FLOW ///////////
     //////////////////////////////////////////////////
-    double Re                   = 5000;
+    double Re                   = 1000;
     double density              = 1.0;
     double kinematicViscosity   = 1.0 / Re;
     double dynamicViscosity     = kinematicViscosity * density;
@@ -87,7 +104,7 @@ int main()
     double lengthX  = 1; // Length of the domain in the x direction
     double lengthY  = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx          = 172; 
+    int Nx          = 120; 
     double h        = lengthX / (Nx - 2);
     int Ny          = (lengthY / h) + 2; // +2 for ghost cells
     //!!!!!! Since uniform grid spacing is used, this way of calculating Ny is still valid.
@@ -98,10 +115,18 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////// AVERAGE CHANGE LIMITS OF PARAMETERS OF THE SIMULATION AND PRESSURE POISSON EQ  /////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    double GSchangeLim  = 1e-3; // Gauss-Seidel convergence criteria for pressure Poisson equation
+    double gsChangeLim  = 1e-3; // Gauss-Seidel convergence criteria for pressure Poisson equation
     double pChangeLim   = 1e-9; // Average change limit for pressure
     double uChangeLim   = 1e-9; // Average change limit for u velocity
     double vChangeLim   = 1e-9; // Average change limit for v velocity
+
+    double gsChange; // Average change in pressure for Gauss-Seidel method
+    // The average change is calculated as the sum of the absolute differences between the current and previous values divided by the number of nodes
+    // When this value is less than the specified limit, the Gauss-Seidel method is considered converged.
+
+    int iteration;   // Counter for the number of iterations in the Gauss-Seidel method
+    int gsIterationLimit = 10000; // Maximum number of iterations for the Gauss-Seidel method
+    // If the Gauss-Seidel method does not converge within this number of iterations, the simulation will stop.
     //--------------END-OF-THE-SECTION------------------------//
 
     //////////////////////////////////////////////////
@@ -112,7 +137,7 @@ int main()
     fstream P_outputFile;        // Output file vertical centerline pressure.
     fstream averageChangeFile;   // Output file for average change values
     averageChangeFile.open("01_average_change.txt", std::ios::out);
-    averageChangeFile << "Gauss-Seidel change limit: " << GSchangeLim << "\n";
+    averageChangeFile << "Gauss-Seidel change limit: " << gsChangeLim << "\n";
     averageChangeFile << "Pressure change limit: " << pChangeLim << "\n";
     averageChangeFile << "U velocity change limit: " << uChangeLim << "\n";
     averageChangeFile << "V velocity change limit: " << vChangeLim << "\n";
@@ -189,9 +214,9 @@ int main()
 
     
     //////////// BOUNDARY CONDITIONS////////////
-    ghostNodeValues(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
-    ghostNodeValues(2, v, vLeftWall, vRightWall, uTopWall, uBottomWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
-    ghostNodeValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+    calculateGhostNodeValues(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+    calculateGhostNodeValues(2, v, vLeftWall, vRightWall, uTopWall, uBottomWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+    calculateGhostNodeValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
     //////////// END OF BOUNDARY CONDITIONS////////////
 
     int n = 0; // counter for the time steps
@@ -199,20 +224,19 @@ int main()
     {
 
         //////////// PREVIOUS FIELDS ARE STORED FOR CONVERGENCE CHECK ///////////
-        vector<vector<double>> pPrev = p;
-        vector<vector<double>> uPrev = u;
-        vector<vector<double>> vPrev = v;
+        pPrev = p;
+        uPrev = u;
+        vPrev = v;
 
         //////// PREDICTOR STEP //////
         for (int i = 1; i < Nx; i++)
         {
             for (int j = 1; j < Ny - 1; j++)
             {
-                double uAdvectX     = u[j][i] * (u[j][i + 1] - u[j][i - 1]) / (2 * h);                                                        // u * du/dx (advection in X for u)
-                double uAdvectY     = 0.25 * (v[j][i - 1] + v[j][i] + v[j + 1][i - 1] + v[j + 1][i]) * (u[j - 1][i] - u[j + 1][i]) / (2 * h); // v * du/dy (advection in Y for u)
-                double uDiffuseX    = (u[j][i + 1] - 2 * u[j][i] + u[j][i - 1]) / (h * h);                                                   // d²u/dx² (diffusion in X for u)
-                double uDiffuseY    = (u[j + 1][i] - 2 * u[j][i] + u[j - 1][i]) / (h * h);                                                   // d²u/dy² (diffusion in Y for u)
-                uStar[j][i]         = u[j][i] + timeStepSize * (kinematicViscosity * (uDiffuseX + uDiffuseY) - (uAdvectX + uAdvectY));
+                uAdvectX        = u[j][i] * (u[j][i + 1] - u[j][i - 1]) / (2 * h);                                                        // u * du/dx (advection in X for u)
+                uAdvectY        = 0.25 * (v[j][i - 1] + v[j][i] + v[j + 1][i - 1] + v[j + 1][i]) * (u[j - 1][i] - u[j + 1][i]) / (2 * h); // v * du/dy (advection in Y for u)
+                uDiffuse        = (u[j][i + 1]+u[j + 1][i] - 4 * u[j][i] + u[j][i - 1]+ u[j - 1][i]) / (h * h);                            // d²u/dx² + d²u/dy² (diffusion in X for u)
+                uStar[j][i]     = u[j][i] + timeStepSize * (kinematicViscosity * uDiffuse - (uAdvectX + uAdvectY));
             }
         }
 
@@ -220,50 +244,66 @@ int main()
         {
             for (int j = 1; j < Ny; j++)
             {
-                double vAdvectX     = 0.25 * (u[j - 1][i] + u[j][i] + u[j - 1][i + 1] + u[j][i + 1]) * (v[j][i + 1] - v[j][i - 1]) / (2 * h); // u * dv/dx (advection in X for v)
-                double vAdvectY     = v[j][i] * (v[j - 1][i] - v[j + 1][i]) / (2 * h);                                                        // v * dv/dy (advection in Y for v)
-                double vDiffuseX    = (v[j][i + 1] - 2 * v[j][i] + v[j][i - 1]) / (h * h);                                                   // d²v/dx² (diffusion in X for v)
-                double vDiffuseY    = (v[j + 1][i] - 2 * v[j][i] + v[j - 1][i]) / (h * h);                                                   // d²v/dy² (diffusion in Y for v)
-                vStar[j][i]         = v[j][i] + timeStepSize * (kinematicViscosity * (vDiffuseX + vDiffuseY) - (vAdvectX + vAdvectY));
+                vAdvectX        = 0.25 * (u[j - 1][i] + u[j][i] + u[j - 1][i + 1] + u[j][i + 1]) * (v[j][i + 1] - v[j][i - 1]) / (2 * h); // u * dv/dx (advection in X for v)
+                vAdvectY        = v[j][i] * (v[j - 1][i] - v[j + 1][i]) / (2 * h);                                                        // v * dv/dy (advection in Y for v)
+                vDiffuse        = (v[j][i + 1]+v[j + 1][i] - 4 * v[j][i] + v[j][i - 1]+ v[j - 1][i]) / (h * h);                            // d²v/dx² + d²v/dy² (diffusion in Y for v)
+                vStar[j][i]     = v[j][i] + timeStepSize * (kinematicViscosity * (vDiffuse) - (vAdvectX + vAdvectY));
             }
         }
 
-        ghostNodeValues(1, uStar, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
-        ghostNodeValues(2, vStar, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+        calculateGhostNodeValues(1, uStar, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+        calculateGhostNodeValues(2, vStar, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
 
         ///////// END OF PREDICTOR STEP /////////
 
 
         ////////// POISSON EQUATION SOLVER //////////
-        double GSchange = 1.0; // This is set to 1 to enter the while loop
-        int iteration   = 0;
-        while (GSchange > GSchangeLim)
+        gsChange = 1.0; // This is set to 1 to enter the while loop
+        iteration   = 0; // Counter for the number of iterations in the Gauss-Seidel method
+        while (gsChange > gsChangeLim)
         {
-            vector<vector<double>> pOld = p; // Store the old pressure values for convergence check
+            pOld = p; // Store the old pressure values for convergence check
             for (int i = 1; i < Nx - 1; i++)
             {
                 for (int j = 1; j < Ny - 1; j++)
                 {
-                    double uStarGradX   = (uStar[j][i + 1] - uStar[j][i]) / (h); // Gradient of uStar in X direction
-                    double vStarGradY   = (vStar[j][i] - vStar[j + 1][i]) / (h); // Gradient of vStar in Y direction
+                    uStarGradX   = (uStar[j][i + 1] - uStar[j][i]) / (h); // Gradient of uStar in X direction
+                    vStarGradY   = (vStar[j][i] - vStar[j + 1][i]) / (h); // Gradient of vStar in Y direction
                     p[j][i]             = 0.25 * (p[j][i + 1] + p[j][i - 1] + p[j - 1][i] + p[j + 1][i]) - (h * h * 0.25 * density / timeStepSize) * (uStarGradX + vStarGradY); // Update pressure using the Poisson equation
                 }
             }
-            GSchange = 0.0; // Reset residual for each iteration
+
+            calculateGhostNodeValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+            
+            gsChange = 0.0; // Reset residual for each iteration
             for (int i = 1; i < Nx - 1; i++)
             {
                 for (int j = 1; j < Ny - 1; j++)
                 {
                     // Calculate the total change in pressure for convergence check
-                    GSchange = GSchange + abs(p[j][i] - pOld[j][i]);
+                    gsChange = gsChange + abs(p[j][i] - pOld[j][i]);
                 }
             }
-            GSchange = GSchange / (Nx * Ny); // Average change in pressure
+            gsChange = gsChange / (Nx * Ny); // Average change in pressure
+            
+            if (iteration > gsIterationLimit)
+            {
+                cout << "Gauss-Seidel method did not converge within the maximum number of iterations." << endl;
+                cout << "Exiting the simulation." << endl;
+                exit(1); // Exit the program if Gauss-Seidel method does not converge
+            }
             iteration++;
-            ghostNodeValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
         }
-        ////// END OF POISSON EQUATION SOLVER ///////
 
+        
+        ////// END OF POISSON EQUATION SOLVER ///////
+        for (int i = 0; i < Nx; i++)
+        {
+            for (int j = 0; j < Ny; j++)
+            {
+                p[j][i] = p[j][i]-p[Ny-2][1];
+            }                
+        }
         //////////// CORRECTOR STEP ////////////
         for (int i = 1; i < Nx; i++)
         {
@@ -279,8 +319,8 @@ int main()
                 v[j][i] = vStar[j][i] - (timeStepSize / density) * ((p[j - 1][i] - p[j][i]) / (h));
             }
         }
-        ghostNodeValues(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
-        ghostNodeValues(2, v, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+        calculateGhostNodeValues(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+        calculateGhostNodeValues(2, v, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
         //////////// FINAL VELOCITY AND PRESSURE VALUES ARE OBTAINED. END OF CORRECTOR STEP ////////////
 
         //////////// CONVERGENCE CHECK ////////////
@@ -303,14 +343,23 @@ int main()
         //////////// END OF CONVERGENCE CHECK ////////////
         
         // Output the average change values and center u velocity to the console and average change file
+
         if (remainder(n, periodOfOutput) == 0)
         {
-            cout << "Time:" << t << "   Uchange: " << aveChangeU << " Vchange: " << aveChangeV << " PressChange: " << aveChangeP << endl;
-            cout << "Center U velocity: " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
-            averageChangeFile << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
-        }
+            // Print Time in normal (default) notation
+            cout << "Time: " << std::fixed << t;
 
-        // Check for convergence.
+            // Print changes in scientific notation
+            cout << std::scientific << "  Uchange: " << aveChangeU
+                                << "  Vchange: " << aveChangeV
+                                << "  PressChange: " << aveChangeP;
+
+            // Print Center U velocity in normal (default) notation
+            cout << std::fixed << "  Center U velocity: " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
+
+            // Write to file (unchanged)
+            averageChangeFile << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
+        }        // Check for convergence.
         // If the average change in u, v and p is less than the specified limits, the simulation is considered converged.
         // If the simulation is converged, break the loop and output the final time step size.
         if (aveChangeU < uChangeLim && aveChangeV < vChangeLim && aveChangeP < pChangeLim)
@@ -375,7 +424,7 @@ int main()
     return 0;
 }
 
-void ghostNodeValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
+void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
 {
 
     if (b == 0)
