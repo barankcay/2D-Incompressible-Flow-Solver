@@ -299,7 +299,7 @@ int main()
                 cout << "Exiting the simulation." << endl;
                 exit(1); // Exit the program if Gauss-Seidel method does not converge
             }
-            iteration++;
+            iteration=iteration + 1; // Increment the iteration counter
         }
         ////// END OF POISSON EQUATION SOLVER ///////
 
