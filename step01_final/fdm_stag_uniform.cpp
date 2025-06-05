@@ -31,6 +31,14 @@ using namespace std;
 // The north wall is a moving wall with velocity U = 1, V = 0.
 // All walls have zero pressure gradient.
 
+//!!!!!!!!!!!!!!!!!!
+//Why indexing is j,i instead of i,j?
+// This is because matrix indexing in C++ is done in row-major order.
+// Our 2D domain is represented as matrix with rows and columns.
+// The first index represents the row (y direction) and the second index represents the column (x direction).
+// To move in y direction, we change the index j. And to move in y direction for matrix, we change the first index. 
+// That makes our first index j and second index i.
+
 
 //-------------------------------------------------------------------------//
 
@@ -61,16 +69,15 @@ int main()
     vector<vector<double>> uPrev; // previous u velocity field for convergence check
     vector<vector<double>> vPrev; // previous v velocity field for convergence check
 
-    double uAdvectX; // u * du/dx (advection in X for u)
-    double uAdvectY; // v * du/dy (advection in Y for u)
-    double vAdvectX; // u * dv/dx (advection in X for v)
-    double vAdvectY; // v * dv/dy (advection in Y for v)
+ 
+    double uAdvection; // Total advection term for u. v * du/dy + u * du/dx
+    double vAdvection; // Total advection term for v. u * dv/dx + v * dv/dy
+
 
     double uDiffuse; // d²u/dx² + d²u/dy² (diffusion in X and Y for u)
     double vDiffuse; // d²v/dx² + d²v/dy² (diffusion in X and Y for v)
 
-    double uStarGradX; // Gradient of uStar in X direction  du*/dx
-    double vStarGradY; // Gradient of vStar in Y direction  dv*/dy
+    double velocityStarGrad; // Gradient of uStar and vStar in X and Y directions for pressure Poisson equation. du*/dx + dv*/dy
     
     //--------------END-OF-THE-SECTION------------------------//
 
@@ -104,7 +111,7 @@ int main()
     double lengthX  = 1; // Length of the domain in the x direction
     double lengthY  = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx          = 120; 
+    int Nx          = 180; 
     double h        = lengthX / (Nx - 2);
     int Ny          = (lengthY / h) + 2; // +2 for ghost cells
     //!!!!!! Since uniform grid spacing is used, this way of calculating Ny is still valid.
@@ -116,9 +123,10 @@ int main()
     ////////// AVERAGE CHANGE LIMITS OF PARAMETERS OF THE SIMULATION AND PRESSURE POISSON EQ  /////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     double gsChangeLim  = 1e-3; // Gauss-Seidel convergence criteria for pressure Poisson equation
-    double pChangeLim   = 1e-9; // Average change limit for pressure
-    double uChangeLim   = 1e-9; // Average change limit for u velocity
-    double vChangeLim   = 1e-9; // Average change limit for v velocity
+    double pChangeLim   = 1e-10; // Average change limit for pressure
+    double uChangeLim   = 1e-10; // Average change limit for u velocity
+    double vChangeLim   = 1e-10; // Average change limit for v velocity
+
 
     double gsChange; // Average change in pressure for Gauss-Seidel method
     // The average change is calculated as the sum of the absolute differences between the current and previous values divided by the number of nodes
@@ -137,12 +145,12 @@ int main()
     fstream P_outputFile;        // Output file vertical centerline pressure.
     fstream averageChangeFile;   // Output file for average change values
     averageChangeFile.open("01_average_change.txt", std::ios::out);
-    averageChangeFile << "Gauss-Seidel change limit: " << gsChangeLim << "\n";
-    averageChangeFile << "Pressure change limit: " << pChangeLim << "\n";
-    averageChangeFile << "U velocity change limit: " << uChangeLim << "\n";
-    averageChangeFile << "V velocity change limit: " << vChangeLim << "\n";
-    averageChangeFile << "# Time U_change V_change P_change uMid\n"; // Header for average change file
-    //--------------END-OF-THE-SECTION------------------------//
+    averageChangeFile <<std::fixed<< "Gauss-Seidel change limit: " << gsChangeLim << "\n"
+    << "Pressure change limit: " << pChangeLim << "\n"
+    << "U velocity change limit: " << uChangeLim << "\n"
+    << "V velocity change limit: " << vChangeLim << "\n"
+    << "# Time  U_change  V_change  P_change  uMid\n"; // Header for average change file
+    //////////// END OF THE OUTPUT CONTRO PARAMETERS SECTION ////////////
 
     //////////////////////////////////////////////////////////
     //////////// TIME PARAMETERS OF THE SIMULATION////////////
@@ -152,7 +160,7 @@ int main()
     // EndTime should be set to a large number since we have a convergence criteria
     // This can be changed to a specific time if needed
     double endTime      = 10000;
-    //--------------END-OF-THE-SECTION------------------------//
+    //////////// END OF THE TIME CONTROLS SECTION ////////////
 
 
 
@@ -166,7 +174,7 @@ int main()
     // So, velocity boundary conditions are applicable only to the top wall.
     // For time step size calculation, we consider the top wall velocities only.
     double timeStepSize = min((h * h) / (4 * dynamicViscosity), 2 * dynamicViscosity / (uTopWall * uTopWall + vTopWall * vTopWall));
-    //--------------END-OF-THE-SECTION------------------------//
+    //////////// END OF THE TIME STEP SIZE CALCULATION ////////////
 
 
 
@@ -210,14 +218,14 @@ int main()
             p[j][i] = 0;
         }
     }
-    //////////// END OF INITIALIZATION ////////////
+    //////////// END OF THE INITIALIZATION ////////////
 
     
     //////////// BOUNDARY CONDITIONS////////////
     calculateGhostNodeValues(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
     calculateGhostNodeValues(2, v, vLeftWall, vRightWall, uTopWall, uBottomWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
     calculateGhostNodeValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
-    //////////// END OF BOUNDARY CONDITIONS////////////
+    //////////// END OF THE INITIAL BOUNDARY CONDITION ASSIGN SECTION ////////////
 
     int n = 0; // counter for the time steps
     for (double t = startTime; t <= endTime; t = t + timeStepSize)
@@ -233,10 +241,10 @@ int main()
         {
             for (int j = 1; j < Ny - 1; j++)
             {
-                uAdvectX        = u[j][i] * (u[j][i + 1] - u[j][i - 1]) / (2 * h);                                                        // u * du/dx (advection in X for u)
-                uAdvectY        = 0.25 * (v[j][i - 1] + v[j][i] + v[j + 1][i - 1] + v[j + 1][i]) * (u[j - 1][i] - u[j + 1][i]) / (2 * h); // v * du/dy (advection in Y for u)
+                uAdvection      = u[j][i] * (u[j][i + 1] - u[j][i - 1]) / (2 * h) +
+                0.25 * (v[j][i - 1] + v[j][i] + v[j + 1][i - 1] + v[j + 1][i]) * (u[j - 1][i] - u[j + 1][i]) / (2 * h);
                 uDiffuse        = (u[j][i + 1]+u[j + 1][i] - 4 * u[j][i] + u[j][i - 1]+ u[j - 1][i]) / (h * h);                            // d²u/dx² + d²u/dy² (diffusion in X for u)
-                uStar[j][i]     = u[j][i] + timeStepSize * (kinematicViscosity * uDiffuse - (uAdvectX + uAdvectY));
+                uStar[j][i]     = u[j][i] + timeStepSize * (kinematicViscosity * uDiffuse - (uAdvection));
             }
         }
 
@@ -244,10 +252,10 @@ int main()
         {
             for (int j = 1; j < Ny; j++)
             {
-                vAdvectX        = 0.25 * (u[j - 1][i] + u[j][i] + u[j - 1][i + 1] + u[j][i + 1]) * (v[j][i + 1] - v[j][i - 1]) / (2 * h); // u * dv/dx (advection in X for v)
-                vAdvectY        = v[j][i] * (v[j - 1][i] - v[j + 1][i]) / (2 * h);                                                        // v * dv/dy (advection in Y for v)
+                vAdvection      =v[j][i] * (v[j - 1][i] - v[j + 1][i]) / (2 * h) +
+                0.25 * (u[j - 1][i] + u[j][i] + u[j - 1][i + 1] + u[j][i + 1]) * (v[j][i + 1] - v[j][i - 1]) / (2 * h);
                 vDiffuse        = (v[j][i + 1]+v[j + 1][i] - 4 * v[j][i] + v[j][i - 1]+ v[j - 1][i]) / (h * h);                            // d²v/dx² + d²v/dy² (diffusion in Y for v)
-                vStar[j][i]     = v[j][i] + timeStepSize * (kinematicViscosity * (vDiffuse) - (vAdvectX + vAdvectY));
+                vStar[j][i]     = v[j][i] + timeStepSize * (kinematicViscosity * (vDiffuse) - (vAdvection));
             }
         }
 
@@ -267,13 +275,12 @@ int main()
             {
                 for (int j = 1; j < Ny - 1; j++)
                 {
-                    uStarGradX   = (uStar[j][i + 1] - uStar[j][i]) / (h); // Gradient of uStar in X direction
-                    vStarGradY   = (vStar[j][i] - vStar[j + 1][i]) / (h); // Gradient of vStar in Y direction
-                    p[j][i]             = 0.25 * (p[j][i + 1] + p[j][i - 1] + p[j - 1][i] + p[j + 1][i]) - (h * h * 0.25 * density / timeStepSize) * (uStarGradX + vStarGradY); // Update pressure using the Poisson equation
+                    velocityStarGrad=(uStar[j][i + 1] - uStar[j][i]+vStar[j][i] - vStar[j + 1][i])/h;
+                    p[j][i]      = 0.25 * (p[j][i + 1] + p[j][i - 1] + p[j - 1][i] + p[j + 1][i]) - 
+                    (h * h * 0.25 * density / timeStepSize) * (velocityStarGrad); // Update pressure using the Poisson equation
                 }
             }
 
-            calculateGhostNodeValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
             
             gsChange = 0.0; // Reset residual for each iteration
             for (int i = 1; i < Nx - 1; i++)
@@ -294,17 +301,25 @@ int main()
             }
             iteration++;
         }
-
-        
         ////// END OF POISSON EQUATION SOLVER ///////
+
+
+        /////////// ANCHORING THE PRESSURE FIELD ////////////
         for (int i = 0; i < Nx; i++)
         {
             for (int j = 0; j < Ny; j++)
             {
-                p[j][i] = p[j][i]-p[Ny-2][1];
+                p[j][i] = p[j][i]-p[1][1];
             }                
         }
+        //////////// END OF ANCHORING THE PRESSURE FIELD ////////////
+
+        //////////// GHOST NODE VALUES ARE CALCULATED FOR THE PRESSURE FIELD ////////////
+        calculateGhostNodeValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+        
+        ////////////////////////////////////////
         //////////// CORRECTOR STEP ////////////
+        ////////////////////////////////////////
         for (int i = 1; i < Nx; i++)
         {
             for (int j = 1; j < Ny - 1; j++)
@@ -358,7 +373,7 @@ int main()
             cout << std::fixed << "  Center U velocity: " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
 
             // Write to file (unchanged)
-            averageChangeFile << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
+            averageChangeFile <<std::fixed<< t << " " << log(aveChangeU) << " " << log(aveChangeV) << " " << log(aveChangeP) << " " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
         }        // Check for convergence.
         // If the average change in u, v and p is less than the specified limits, the simulation is considered converged.
         // If the simulation is converged, break the loop and output the final time step size.

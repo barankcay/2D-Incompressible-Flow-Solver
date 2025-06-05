@@ -24,21 +24,21 @@ plt.figure(figsize=(5,5))
 plt.grid()
 # plt.plot(colocVeloc,colocCoord,linestyle="-",marker='d',linewidth=0.5,markersize=2,label="11x11coloc",color="red")
 # plt.plot(stagVeloc,stagCoord,linestyle="-",marker='o',linewidth=0.5,markersize=2,label="11x11stag",color="blue")
-plt.plot(ghiaU,ghiaY,"o",label="ghia",color="green")
+plt.plot(ghiaU,ghiaY,"o",label="Ghia [?]",color="green")
 plt.plot(u,y,linestyle="-",linewidth=0.5,markersize=2,label="fdmStag",color="blue")
 
 # plt.plot(colocCSVeloc,colocCSCoord,linestyle="--",linewidth=1,label="coloc CS",color="blue")
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('U [m/s]')
 plt.ylabel('y [m]')
-plt.title('LDC 100Re / 170x170')
+plt.title('LDC 100Re / 140x140')
 plt.legend()
 plt.savefig("01_FDM_StaggeredVsGhia_100.png")
 plt.show()
 
 
 
-
+plt.figure(figsize=(5,5))
 plt.plot(time,uChange,linestyle="-",linewidth=1,markersize=2,label="uChange",color="red")
 plt.plot(time,vChange,linestyle="-",linewidth=1,markersize=2,label="vChange",color="green")
 plt.plot(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",color="blue")
@@ -46,7 +46,7 @@ plt.plot(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",col
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('time [s]')
 plt.ylabel('Average of change')
-plt.title('LDC 100Re / 170x170')
+plt.title('LDC 100Re / 140x140')
 
 # plt.xlim(0,30)
 # plt.xlim(-0.4,1)
@@ -58,9 +58,11 @@ plt.legend()
 plt.savefig("02_averageChange.png")
 
 plt.show()
+plt.figure(figsize=(5,5))
+
 plt.xlabel('time [s]')
 plt.ylabel('u [m/s]')
-plt.title('LDC 100Re / 170x170')
+plt.title('LDC 100Re / 140x140')
 
 plt.grid()
 plt.plot(time,uMid,linestyle="-",linewidth=1,markersize=2,label="uMid",color="black")
