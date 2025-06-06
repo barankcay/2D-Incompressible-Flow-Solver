@@ -25,15 +25,15 @@ plt.grid()
 # plt.plot(colocVeloc,colocCoord,linestyle="-",marker='d',linewidth=0.5,markersize=2,label="11x11coloc",color="red")
 # plt.plot(stagVeloc,stagCoord,linestyle="-",marker='o',linewidth=0.5,markersize=2,label="11x11stag",color="blue")
 plt.plot(ghiaU,ghiaY,"o",label="Ghia [?]",color="green")
-plt.plot(u,y,linestyle="-",linewidth=0.5,markersize=2,label="fdmStag",color="blue")
+plt.plot(u,y,linestyle="-",linewidth=0.5,markersize=2,label="FVMStag",color="blue")
 
 # plt.plot(colocCSVeloc,colocCSCoord,linestyle="--",linewidth=1,label="coloc CS",color="blue")
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('U [m/s]')
 plt.ylabel('y [m]')
-plt.title('LDC 100Re / 140x140')
+plt.title('LDC 100Re / 110x110')
 plt.legend()
-plt.savefig("01_FDM_StaggeredVsGhia_100.svg")
+plt.savefig("01_FVM_StaggeredVsGhia_100.svg")
 plt.show()
 
 
@@ -46,7 +46,7 @@ plt.plot(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",col
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('time [s]')
 plt.ylabel('Average change')
-plt.title('LDC 100Re / 140x140')
+plt.title('LDC 100Re / 110x110')
 
 # plt.xlim(0,30)
 # plt.xlim(-0.4,1)
@@ -62,7 +62,7 @@ plt.figure(figsize=(5,5))
 
 plt.xlabel('time [s]')
 plt.ylabel('u [m/s]')
-plt.title('LDC 100Re / 140x140')
+plt.title('LDC 100Re / 110x110')
 
 plt.grid()
 plt.plot(time,uMid,linestyle="-",linewidth=1,markersize=2,label="uMid",color="black")

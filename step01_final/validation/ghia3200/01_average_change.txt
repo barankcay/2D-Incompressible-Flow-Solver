@@ -1,7 +1,7 @@
 Gauss-Seidel change limit: 0.001000
-Pressure change limit: 0.000000
-U velocity change limit: 0.000000
-V velocity change limit: 0.000000
+Pressure change limit: 1e-10
+U velocity change limit: 1e-10
+V velocity change limit: 1e-10
 # Time  U_change  V_change  P_change  uMid
 0.000000 -9.602181 -15.556098 -13.120886 -0.000000
 0.062500 -9.970532 -10.619245 -8.740525 -0.000000

@@ -1,7 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 averageChange=np.loadtxt("01_average_change.txt",skiprows=5)
-ghia=np.loadtxt("ghia100.txt")
+ghia=np.loadtxt("ghia5000.txt")
 pressureOutput=np.loadtxt("03_P_output.txt",skiprows=8)
 velocityOutput=np.loadtxt("02_U_output.txt",skiprows=8)
 
@@ -25,19 +25,19 @@ plt.grid()
 # plt.plot(colocVeloc,colocCoord,linestyle="-",marker='d',linewidth=0.5,markersize=2,label="11x11coloc",color="red")
 # plt.plot(stagVeloc,stagCoord,linestyle="-",marker='o',linewidth=0.5,markersize=2,label="11x11stag",color="blue")
 plt.plot(ghiaU,ghiaY,"o",label="Ghia [?]",color="green")
-plt.plot(u,y,linestyle="-",linewidth=0.5,markersize=2,label="fdmStag",color="blue")
+plt.plot(u,y,linestyle="-",linewidth=0.5,markersize=2,label="FVMStag",color="blue")
 
 # plt.plot(colocCSVeloc,colocCSCoord,linestyle="--",linewidth=1,label="coloc CS",color="blue")
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('U [m/s]')
 plt.ylabel('y [m]')
-plt.title('LDC 100Re / 140x140')
+plt.title('LDC 5000Re / 180x180')
 plt.legend()
-plt.savefig("01_FDM_StaggeredVsGhia_100.svg")
+plt.savefig("01_FVM_StaggeredVsGhia_5000.svg")
 plt.show()
 
 
-
+########################################
 plt.figure(figsize=(5,5))
 plt.plot(time,uChange,linestyle="-",linewidth=1,markersize=2,label="uChange",color="red")
 plt.plot(time,vChange,linestyle="-",linewidth=1,markersize=2,label="vChange",color="green")
@@ -45,8 +45,8 @@ plt.plot(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",col
 
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('time [s]')
-plt.ylabel('Average change')
-plt.title('LDC 100Re / 140x140')
+plt.ylabel('Average Change')
+plt.title('LDC 5000Re / 180x180')
 
 # plt.xlim(0,30)
 # plt.xlim(-0.4,1)
@@ -56,15 +56,17 @@ plt.title('LDC 100Re / 140x140')
 # plt.ylim(0,1)
 plt.legend()
 plt.savefig("02_averageChange.svg")
-
 plt.show()
-plt.figure(figsize=(5,5))
 
+#########################################3
+plt.figure(figsize=(5,5))
 plt.xlabel('time [s]')
 plt.ylabel('u [m/s]')
-plt.title('LDC 100Re / 140x140')
+plt.title('LDC 5000Re / 180x180')
 
 plt.grid()
 plt.plot(time,uMid,linestyle="-",linewidth=1,markersize=2,label="uMid",color="black")
+
 plt.legend()
+
 plt.savefig("03_uMid.svg")
