@@ -90,7 +90,7 @@ int main()
     //////////////////////////////////////////////////
     ////////// CHARACTERISTICS OF THE FLOW ///////////
     //////////////////////////////////////////////////
-    double Re = 100;
+    double Re = 3200;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -100,9 +100,9 @@ int main()
     //////////////////////////////////////////////////
     ////////// BOUNDARY CONDITIONS //////////////////
     //////////////////////////////////////////////////
-    double uTopWall = 0.0;    // x direction velocity at the top wall
+    double uTopWall = 1.0;    // x direction velocity at the top wall
     double uBottomWall = 0.0; // x direction velocity at the bottom wall
-    double uLeftWall = 1.0;   // x direction velocity at the left wall
+    double uLeftWall = 0.0;   // x direction velocity at the left wall
     double uRightWall = 0.0;  // x direction velocity at the right wall
     double vTopWall = 0.0;    // y direction velocity at the top wall
     double vBottomWall = 0.0; // y direction velocity at the bottom wall
@@ -116,10 +116,10 @@ int main()
     ////////// GRID PARAMETERS ///////////////////////
     //////////////////////////////////////////////////
     // lengthx and lengthy are the lengths of the domain in the x and y directions, not including ghost cells
-    double lengthX = 10; // Length of the domain in the x direction
+    double lengthX = 1; // Length of the domain in the x direction
     double lengthY = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx = 202;
+    int Nx = 182;
     double h = lengthX / (Nx - 2);
     int Ny = (lengthY / h) + 2; // +2 for ghost cells
     cout<<Ny<<endl;
@@ -178,7 +178,7 @@ int main()
     // The time step size is calculated using the minimum of the two criteria
     // For 2D channel flow, theoreticaly, the maximum velocity can be observed is 1.5*uniformInletVelocity
     // So, for maximum velocity, we use 1.5 * uLeftWall in the second criteria.
-    double timeStepSize = min((h * h) / (4 * dynamicViscosity), 2 * dynamicViscosity / (uLeftWall*1.5));
+    double timeStepSize = min((h * h) / (4 * dynamicViscosity), 2 * dynamicViscosity / (4));
     //////////// END OF THE TIME STEP SIZE CALCULATION ////////////
     //////////////////////////////////////////////////////////////////////////////
     //////////// INITIALIZATION and ASSIGNING DIMENSION OF THE FIELDS ////////////
@@ -262,7 +262,7 @@ int main()
             {
                 for (int j = 1; j < Ny - 1; j++)
                 {
-                    velocityStarGrad = (density / timeStepSize) * ((uStar[j][i + 1] - uStar[j][i-1] + vStar[j-1][i] - vStar[j + 1][i]) / h);
+                    velocityStarGrad = (density / timeStepSize) * ((uStar[j][i + 1] - uStar[j][i-1] + vStar[j-1][i] - vStar[j + 1][i]) / (2*h));
                     p[j][i] = ((p[j][i - 1] + p[j][i + 1] + p[j - 1][i] + p[j + 1][i]) - velocityStarGrad * h * h) * 0.25; // Pressure Poisson equation
                 }
             }
@@ -302,8 +302,8 @@ int main()
         {
             for (int j = 1; j < Ny - 1; j++)
             {
-                u[j][i] = uStar[j][i] - (timeStepSize / (h)) * ((p[j][i+1] - p[j][i - 1]) / density); // Corrector step for u velocity field
-                v[j][i] = vStar[j][i] - (timeStepSize / (h)) * ((p[j - 1][i] - p[j+1][i]) / density); // Corrector step for v velocity field
+                u[j][i] = uStar[j][i] - (timeStepSize / (h)) * 0.5*((p[j][i+1] - p[j][i - 1]) / density); // Corrector step for u velocity field
+                v[j][i] = vStar[j][i] - (timeStepSize / (h)) * 0.5*((p[j - 1][i] - p[j+1][i]) / density); // Corrector step for v velocity field
             }
         }
 
@@ -377,10 +377,15 @@ int main()
     U_outputFile << "t      = " << n * timeStepSize << "\n";
     U_outputFile << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
     U_outputFile << "y            u \n";
-    for (int i = 1; i < Nx - 1; i++)
+    // for (int i = 1; i < Nx - 1; i++)
+    // {
+    //     U_outputFile << std::fixed << std::setprecision(7) <<  (i - 1) * h << "    "
+    //                  << std::fixed << std::setprecision(7) << 0.5 * (u[Ny/2][i] + u[(Ny-2)/2][i]) << "\n";
+    // }
+    for (int j = 1; j < Ny - 1; j++)
     {
-        U_outputFile << std::fixed << std::setprecision(7) <<  (i - 1) * h << "    "
-                     << std::fixed << std::setprecision(7) << 0.5 * (u[Ny/2][i] + u[(Ny-2)/2][i]) << "\n";
+        U_outputFile << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
+                     << std::fixed << std::setprecision(7) << 0.5 * (u[j][(Nx / 2) - 1] + u[j][(Nx / 2) + 1]) << "\n";
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -397,10 +402,15 @@ int main()
     P_outputFile << "# t = " << n * timeStepSize << "\n";
     P_outputFile << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
     P_outputFile << "y            p \n";
-    for (int i = 1; i < Nx - 1; i++)
+    // for (int i = 1; i < Nx - 1; i++)
+    // {
+    //     P_outputFile << std::fixed << std::setprecision(7) <<  (i - 1) * h + h / 2 << "    "
+    //                  << std::fixed << std::setprecision(7) << 0.5 * (p[Ny/2][i] + p[(Ny-2)/2][i]) << "\n";
+    // }
+    for (int j = 1; j < Ny - 1; j++)
     {
-        P_outputFile << std::fixed << std::setprecision(7) <<  (i - 1) * h + h / 2 << "    "
-                     << std::fixed << std::setprecision(7) << 0.5 * (p[Ny/2][i] + p[(Ny-2)/2][i]) << "\n";
+        P_outputFile << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
+                     << std::fixed << std::setprecision(7) << 0.5 * (p[j][(Nx / 2) - 1] + p[j][(Nx / 2) + 1]) << "\n";
     }
 
     U_outputFile.close();
@@ -409,7 +419,7 @@ int main()
 
     return 0;
 }
-void calculateGhostCellValues(int b, vector<vector<double>> &M,double pressureOutlet, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
+void calculateGhostCellValues1(int b, vector<vector<double>> &M,double pressureOutlet, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
 {
 
     if (b == 0)
@@ -417,7 +427,8 @@ void calculateGhostCellValues(int b, vector<vector<double>> &M,double pressureOu
         for (int j = Ny - 2; j >= 1; j--)
         {
             M[j][0] = M[j][1];           // Left wall, dp/dx = 0
-            M[j][Nx - 1] = 2*pressureOutlet-M[j][Nx-2]; // Right wall, dp/dx = 0
+            M[j][Nx - 1] = 2*pressureOutlet-M[j][Nx-2]; // 
+            
         }
         for (int i = Nx - 2; i >= 1; i--)
         {
@@ -462,3 +473,52 @@ void calculateGhostCellValues(int b, vector<vector<double>> &M,double pressureOu
     
 }
 
+void calculateGhostCellValues(int b, vector<vector<double>> &M,double pressureOutlet, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
+{
+
+    if (b == 0)
+    {
+        for (int j = Ny - 2; j >= 1; j--)
+        {
+            M[j][0] = M[j][1];                   // Left wall, dp/dx = 0
+            M[j][Nx - 1] = M[j][Nx - 2]; // Right wall, dp/dx = 0
+        }
+        for (int i = Nx - 2; i >= 1; i--)
+        {
+            M[0][i] = M[1][i];                   // Top wall, dp/dy = 0
+            M[Ny - 1][i] = M[Ny - 2][i]; // Bottom wall, dp/dy = 0
+        }
+    }
+    else if (b == 1)
+    {
+        for (int j = Ny - 2; j >= 1; j--)
+        {
+            M[j][0] = 2 * uLeftWall - M[j][1]; // Left wall,ghost cell,  u = 0
+
+            M[j][Nx - 1] = 2 * uRightWall - M[j][Nx - 2]; // Right wall, u = 0
+        }
+        for (int i = Nx - 2; i >= 1; i--)
+        {
+            M[0][i] = 2 * uTopWall - M[1][i];                      // Top wall, ghost cell
+            M[Ny - 1][i] = 2 * uBottomWall - M[Ny - 2][i]; // Bottom wall, ghost cell
+        }
+    }
+    else if (b == 2)
+    {
+
+        for (int i = Nx - 2; i >= 1; i--)
+        {
+            M[0][i] = 2 * vTopWall - M[1][i];                      // Top wall, v = 0
+            M[Ny - 1][i] = 2 * vBottomWall - M[Ny - 2][i]; // Bottom wall, v = 0
+        }
+        for (int j = Ny - 2; j >= 1; j--)
+        {
+            M[j][0] = 2 * vLeftWall - M[j][1];                    // Left wall, ghost cell
+            M[j][Nx - 1] = 2 * vRightWall - M[j][Nx - 2]; // Right wall, ghost cell
+        }
+    }
+    M[0][0] = 0.5 * (M[0][1] + M[1][0]);                                                       // Top left corner
+    M[0][Nx - 1] = 0.5 * (M[0][Nx - 2] + M[1][Nx - 1]);                            // Top right corner
+    M[Ny - 1][0] = 0.5 * (M[Ny - 2][0] + M[Ny - 1][1]);                            // Bottom left corner
+    M[Ny - 1][Nx - 1] = 0.5 * (M[Ny - 1][Nx - 2] + M[Ny - 2][Nx - 1]); // Bottom right corner
+}
