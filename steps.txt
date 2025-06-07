@@ -15,7 +15,7 @@ Completed? -
 
 step04: FVM code (similar to above, but works on colocated meshes. No stabilization for checkerboard pressure)
 Started to working on? +
-Waiting for feedbacks? -
+Waiting for feedbacks? + (Channel flow is not running properly)
 Completed? -
 
 step05: FVM code (similar to above, but with stabilization for checkerboard pressure)
