@@ -90,7 +90,7 @@ int main()
     //////////////////////////////////////////////////
     ////////// CHARACTERISTICS OF THE FLOW ///////////
     //////////////////////////////////////////////////
-    double Re = 3200;
+    double Re = 100;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -119,7 +119,7 @@ int main()
     double lengthX = 1; // Length of the domain in the x direction
     double lengthY = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx = 182;
+    int Nx = 102;
     double h = lengthX / (Nx - 2);
     int Ny = (lengthY / h) + 2; // +2 for ghost cells
     cout<<Ny<<endl;
@@ -133,8 +133,8 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     double gsChangeLim = 1e-4; // Gauss-Seidel convergence criteria for pressure Poisson equation
     double pChangeLim = 1e-9; // Average change limit for pressure
-    double uChangeLim = 1e-9; // Average change limit for u velocity
-    double vChangeLim = 1e-9; // Average change limit for v velocity
+    double uChangeLim = 6.5e-05; // Average change limit for u velocity
+    double vChangeLim = 3.5e-05; // Average change limit for v velocity
 
     double gsChange; // Average change in pressure for Gauss-Seidel method
     // The average change is calculated as the sum of the absolute differences between the current and previous values divided by the number of cells
@@ -410,7 +410,7 @@ int main()
     for (int j = 1; j < Ny - 1; j++)
     {
         P_outputFile << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
-                     << std::fixed << std::setprecision(7) << 0.5 * (p[j][(Nx / 2) - 1] + p[j][(Nx / 2) + 1]) << "\n";
+                     << std::fixed << std::setprecision(7) << p[j][(Nx -1)/2] << "\n";
     }
 
     U_outputFile.close();

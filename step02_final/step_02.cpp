@@ -87,7 +87,7 @@ int main()
     //////////////////////////////////////////////////
     ////////// CHARACTERISTICS OF THE FLOW ///////////
     //////////////////////////////////////////////////
-    double Re = 5000;
+    double Re = 1000;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -114,7 +114,7 @@ int main()
     double lengthX = 1; // Length of the domain in the x direction
     double lengthY = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx = 180;
+    int Nx = 13;
     double h = lengthX / (Nx - 2);
     int Ny = (lengthY / h) + 2; // +2 for ghost cells
     //!!!!!! Since uniform grid spacing is used, this way of calculating Ny is still valid.
@@ -433,7 +433,7 @@ int main()
     for (int j = 1; j < Ny - 1; j++)
     {
         P_outputFile << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
-                     << std::fixed << std::setprecision(7) << 0.5 * (p[j][(Nx / 2) - 1] + p[j][(Nx / 2) + 1]) << "\n";
+                     << std::fixed << std::setprecision(7) << p[j][(Nx -1)/ 2] << "\n";
     }
 
     U_outputFile.close();
