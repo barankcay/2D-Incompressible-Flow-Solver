@@ -65,6 +65,7 @@ int main()
     vector<vector<double>> pPrev; // previous pressure field for convergence check
     vector<vector<double>> pOld;  // old pressure field for Gauss-Seidel method
 
+
     vector<vector<double>> uPrev; // previous u velocity field for convergence check
     vector<vector<double>> vPrev; // previous v velocity field for convergence check
 
@@ -90,7 +91,7 @@ int main()
     //////////////////////////////////////////////////
     ////////// CHARACTERISTICS OF THE FLOW ///////////
     //////////////////////////////////////////////////
-    double Re = 100;
+    double Re = 1000;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -119,7 +120,7 @@ int main()
     double lengthX = 1; // Length of the domain in the x direction
     double lengthY = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx = 102;
+    int Nx = 13;
     double h = lengthX / (Nx - 2);
     int Ny = (lengthY / h) + 2; // +2 for ghost cells
     cout<<Ny<<endl;
@@ -133,8 +134,8 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     double gsChangeLim = 1e-4; // Gauss-Seidel convergence criteria for pressure Poisson equation
     double pChangeLim = 1e-9; // Average change limit for pressure
-    double uChangeLim = 6.5e-05; // Average change limit for u velocity
-    double vChangeLim = 3.5e-05; // Average change limit for v velocity
+    double uChangeLim = 1e-9; // Average change limit for u velocity
+    double vChangeLim = 1e-9; // Average change limit for v velocity
 
     double gsChange; // Average change in pressure for Gauss-Seidel method
     // The average change is calculated as the sum of the absolute differences between the current and previous values divided by the number of cells
@@ -149,8 +150,8 @@ int main()
     ////////// OUTPUT CONTROL PARAMETERS /////////////
     //////////////////////////////////////////////////
     double periodOfOutput = 100; // Time period for outputting average change and screen output
-    fstream U_outputFile;        // Output file vertical centerline u velocity
-    fstream P_outputFile;        // Output file vertical centerline pressure.
+    fstream U_outputFileColoc;        // Output file vertical centerline u velocity
+    fstream P_outputFileColoc;        // Output file vertical centerline pressure.
     fstream averageChangeFile;   // Output file for average change values
     averageChangeFile.open("01_average_change.txt", std::ios::out);
     averageChangeFile <<  "Gauss-Seidel change limit: " << gsChangeLim << "\n"
@@ -262,7 +263,7 @@ int main()
             {
                 for (int j = 1; j < Ny - 1; j++)
                 {
-                    velocityStarGrad = (density / timeStepSize) * ((uStar[j][i + 1] - uStar[j][i-1] + vStar[j-1][i] - vStar[j + 1][i]) / (2*h));
+                    velocityStarGrad = (density / timeStepSize) * ((0.5*(uStar[j][i + 1]+uStar[j][i]) - 0.5*(uStar[j][i-1]+uStar[j][i]) + 0.5*(vStar[j-1][i]+vStar[j][i]) - 0.5*(vStar[j + 1][i]+vStar[j][i])) / (h));
                     p[j][i] = ((p[j][i - 1] + p[j][i + 1] + p[j - 1][i] + p[j + 1][i]) - velocityStarGrad * h * h) * 0.25; // Pressure Poisson equation
                 }
             }
@@ -288,7 +289,14 @@ int main()
         }
         ////// END OF POISSON EQUATION SOLVER ///////
 
-
+        /////////// ANCHORING THE PRESSURE FIELD ////////////
+        for (int i = 0; i < Nx; i++)
+        {
+            for (int j = 0; j < Ny; j++)
+            {
+                p[j][i] = p[j][i] - p[Ny-2][1];
+            }
+        }
 
         //////////// GHOST CELL VALUES ARE CALCULATED FOR THE PRESSURE FIELD ////////////
         calculateGhostCellValues(0, p, pressureOutlet,uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
@@ -368,24 +376,24 @@ int main()
     //////////////////////////////////////////////////////////////////////////////
     //////////// OUTPUTTING VERTICAL X VELOCITY TO OUTPUT FILE ///////////////////
     //////////////////////////////////////////////////////////////////////////////
-    U_outputFile.open("02_U_output.txt", std::ios::out);
-    U_outputFile << "nx     = " << Nx << "\n";
-    U_outputFile << "ny     = " << Ny << "\n";
-    U_outputFile << "dt     = " << timeStepSize << "\n";
-    U_outputFile << "Re     = " << Re << "\n";
-    U_outputFile << "n      = " << n << "\n";
-    U_outputFile << "t      = " << n * timeStepSize << "\n";
-    U_outputFile << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
-    U_outputFile << "y            u \n";
+    U_outputFileColoc.open("02_U_output_FVM_Coloc.txt", std::ios::out);
+    U_outputFileColoc << "nx     = " << Nx << "\n";
+    U_outputFileColoc << "ny     = " << Ny << "\n";
+    U_outputFileColoc << "dt     = " << timeStepSize << "\n";
+    U_outputFileColoc << "Re     = " << Re << "\n";
+    U_outputFileColoc << "n      = " << n << "\n";
+    U_outputFileColoc << "t      = " << n * timeStepSize << "\n";
+    U_outputFileColoc << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
+    U_outputFileColoc << "y            u \n";
     // for (int i = 1; i < Nx - 1; i++)
     // {
-    //     U_outputFile << std::fixed << std::setprecision(7) <<  (i - 1) * h << "    "
+    //     U_outputFileColoc << std::fixed << std::setprecision(7) <<  (i - 1) * h << "    "
     //                  << std::fixed << std::setprecision(7) << 0.5 * (u[Ny/2][i] + u[(Ny-2)/2][i]) << "\n";
     // }
     for (int j = 1; j < Ny - 1; j++)
     {
-        U_outputFile << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
-                     << std::fixed << std::setprecision(7) << 0.5 * (u[j][(Nx / 2) - 1] + u[j][(Nx / 2) + 1]) << "\n";
+        U_outputFileColoc << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
+                     << std::fixed << std::setprecision(7) << u[j][(Nx -1)/2] << "\n";
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -393,33 +401,33 @@ int main()
     //////////// This is the average of the pressure at the left and right cells//
     //////////// because there is no pressure at the center vertical line of the domain //
     //////////////////////////////////////////////////////////////////////////////
-    P_outputFile.open("03_P_output.txt", std::ios::out);
-    P_outputFile << "# nx = " << Nx << "\n";
-    P_outputFile << "# ny = " << Ny << "\n";
-    P_outputFile << "# dt = " << timeStepSize << "\n";
-    P_outputFile << "# Re = " << Re << "\n";
-    P_outputFile << "# n = " << n << "\n";
-    P_outputFile << "# t = " << n * timeStepSize << "\n";
-    P_outputFile << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
-    P_outputFile << "y            p \n";
+    P_outputFileColoc.open("03_P_output_FVM_Coloc.txt", std::ios::out);
+    P_outputFileColoc << "# nx = " << Nx << "\n";
+    P_outputFileColoc << "# ny = " << Ny << "\n";
+    P_outputFileColoc << "# dt = " << timeStepSize << "\n";
+    P_outputFileColoc << "# Re = " << Re << "\n";
+    P_outputFileColoc << "# n = " << n << "\n";
+    P_outputFileColoc << "# t = " << n * timeStepSize << "\n";
+    P_outputFileColoc << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
+    P_outputFileColoc << "y            p \n";
     // for (int i = 1; i < Nx - 1; i++)
     // {
-    //     P_outputFile << std::fixed << std::setprecision(7) <<  (i - 1) * h + h / 2 << "    "
+    //     P_outputFileColoc << std::fixed << std::setprecision(7) <<  (i - 1) * h + h / 2 << "    "
     //                  << std::fixed << std::setprecision(7) << 0.5 * (p[Ny/2][i] + p[(Ny-2)/2][i]) << "\n";
     // }
     for (int j = 1; j < Ny - 1; j++)
     {
-        P_outputFile << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
+        P_outputFileColoc << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
                      << std::fixed << std::setprecision(7) << p[j][(Nx -1)/2] << "\n";
     }
 
-    U_outputFile.close();
-    P_outputFile.close();
+    U_outputFileColoc.close();
+    P_outputFileColoc.close();
     averageChangeFile.close();
 
     return 0;
 }
-void calculateGhostCellValues1(int b, vector<vector<double>> &M,double pressureOutlet, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
+void calculateGhostCellValues(int b, vector<vector<double>> &M,double pressureOutlet, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
 {
 
     if (b == 0)
@@ -473,7 +481,7 @@ void calculateGhostCellValues1(int b, vector<vector<double>> &M,double pressureO
     
 }
 
-void calculateGhostCellValues(int b, vector<vector<double>> &M,double pressureOutlet, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
+void calculateGhostCellValues1(int b, vector<vector<double>> &M,double pressureOutlet, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
 {
 
     if (b == 0)

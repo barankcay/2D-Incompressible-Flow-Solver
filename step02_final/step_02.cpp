@@ -143,8 +143,8 @@ int main()
     ////////// OUTPUT CONTROL PARAMETERS /////////////
     //////////////////////////////////////////////////
     double periodOfOutput = 100; // Time period for outputting average change and screen output
-    fstream U_outputFile;        // Output file vertical centerline u velocity
-    fstream P_outputFile;        // Output file vertical centerline pressure.
+    fstream U_outputFileStag;        // Output file vertical centerline u velocity
+    fstream P_outputFileStag;        // Output file vertical centerline pressure.
     fstream averageChangeFile;   // Output file for average change values
     averageChangeFile.open("01_average_change.txt", std::ios::out);
     averageChangeFile <<  "Gauss-Seidel change limit: " << gsChangeLim << "\n"
@@ -313,7 +313,7 @@ int main()
         {
             for (int j = 0; j < Ny; j++)
             {
-                p[j][i] = p[j][i] - p[1][1];
+                p[j][i] = p[j][i] - p[Ny-2][1];
             }
         }
         //////////// END OF ANCHORING THE PRESSURE FIELD ////////////
@@ -401,19 +401,19 @@ int main()
     //////////////////////////////////////////////////////////////////////////////
     //////////// OUTPUTTING VERTICAL X VELOCITY TO OUTPUT FILE ///////////////////
     //////////////////////////////////////////////////////////////////////////////
-    U_outputFile.open("02_U_output.txt", std::ios::out);
-    U_outputFile << "nx     = " << Nx << "\n";
-    U_outputFile << "ny     = " << Ny << "\n";
-    U_outputFile << "dt     = " << timeStepSize << "\n";
-    U_outputFile << "Re     = " << Re << "\n";
-    U_outputFile << "n      = " << n << "\n";
-    U_outputFile << "t      = " << n * timeStepSize << "\n";
-    U_outputFile << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
-    U_outputFile << "y            u \n";
+    U_outputFileStag.open("02_U_output_FVM_Stag.txt", std::ios::out);
+    U_outputFileStag << "nx     = " << Nx << "\n";
+    U_outputFileStag << "ny     = " << Ny << "\n";
+    U_outputFileStag << "dt     = " << timeStepSize << "\n";
+    U_outputFileStag << "Re     = " << Re << "\n";
+    U_outputFileStag << "n      = " << n << "\n";
+    U_outputFileStag << "t      = " << n * timeStepSize << "\n";
+    U_outputFileStag << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
+    U_outputFileStag << "y            u \n";
     for (int j = 1; j < Ny - 1; j++)
     {
-        U_outputFile << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
-                     << std::fixed << std::setprecision(7) << u[j][Nx / 2] << "\n";
+        U_outputFileStag << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
+                     << std::fixed << std::setprecision(7) << 0.5*(u[j][(Nx-1)/2]+u[j][(Nx+1)/2]) << "\n";
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -421,23 +421,23 @@ int main()
     //////////// This is the average of the pressure at the left and right cells//
     //////////// because there is no pressure at the center vertical line of the domain //
     //////////////////////////////////////////////////////////////////////////////
-    P_outputFile.open("03_P_output.txt", std::ios::out);
-    P_outputFile << "# nx = " << Nx << "\n";
-    P_outputFile << "# ny = " << Ny << "\n";
-    P_outputFile << "# dt = " << timeStepSize << "\n";
-    P_outputFile << "# Re = " << Re << "\n";
-    P_outputFile << "# n = " << n << "\n";
-    P_outputFile << "# t = " << n * timeStepSize << "\n";
-    P_outputFile << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
-    P_outputFile << "y            p \n";
+    P_outputFileStag.open("03_P_output_FVM_Stag.txt", std::ios::out);
+    P_outputFileStag << "# nx = " << Nx << "\n";
+    P_outputFileStag << "# ny = " << Ny << "\n";
+    P_outputFileStag << "# dt = " << timeStepSize << "\n";
+    P_outputFileStag << "# Re = " << Re << "\n";
+    P_outputFileStag << "# n = " << n << "\n";
+    P_outputFileStag << "# t = " << n * timeStepSize << "\n";
+    P_outputFileStag << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
+    P_outputFileStag << "y            p \n";
     for (int j = 1; j < Ny - 1; j++)
     {
-        P_outputFile << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
+        P_outputFileStag << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
                      << std::fixed << std::setprecision(7) << p[j][(Nx -1)/ 2] << "\n";
     }
 
-    U_outputFile.close();
-    P_outputFile.close();
+    U_outputFileStag.close();
+    P_outputFileStag.close();
     averageChangeFile.close();
 
     return 0;
