@@ -15,8 +15,14 @@ Completed? -
 
 step04: FVM code (similar to above, but works on colocated meshes. No stabilization for checkerboard pressure)
 Started to working on? +
-Waiting for feedbacks? + (Channel flow is not running properly, only LDC is tested)
+Waiting for feedbacks? + (Channel flow is not running properly,)
 Completed? -
+
+step04_1: FVM code (similar to above, but also solves Lid driven cavity)
+Started to working on? +
+Waiting for feedbacks? -
+Completed? -
+
 
 step05: FVM code (similar to above, but with stabilization for checkerboard pressure)
 Started to working on? -

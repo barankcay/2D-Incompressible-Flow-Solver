@@ -91,7 +91,7 @@ int main()
     //////////////////////////////////////////////////
     ////////// CHARACTERISTICS OF THE FLOW ///////////
     //////////////////////////////////////////////////
-    double Re = 1000;
+    double Re = 100;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -101,9 +101,9 @@ int main()
     //////////////////////////////////////////////////
     ////////// BOUNDARY CONDITIONS //////////////////
     //////////////////////////////////////////////////
-    double uTopWall = 1.0;    // x direction velocity at the top wall
+    double uTopWall = 0.0;    // x direction velocity at the top wall
     double uBottomWall = 0.0; // x direction velocity at the bottom wall
-    double uLeftWall = 0.0;   // x direction velocity at the left wall
+    double uLeftWall = 1.0;   // x direction velocity at the left wall
     double uRightWall = 0.0;  // x direction velocity at the right wall
     double vTopWall = 0.0;    // y direction velocity at the top wall
     double vBottomWall = 0.0; // y direction velocity at the bottom wall
@@ -117,10 +117,10 @@ int main()
     ////////// GRID PARAMETERS ///////////////////////
     //////////////////////////////////////////////////
     // lengthx and lengthy are the lengths of the domain in the x and y directions, not including ghost cells
-    double lengthX = 1; // Length of the domain in the x direction
+    double lengthX = 10; // Length of the domain in the x direction
     double lengthY = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx = 13;
+    int Nx = 202;
     double h = lengthX / (Nx - 2);
     int Ny = (lengthY / h) + 2; // +2 for ghost cells
     cout<<Ny<<endl;
@@ -195,6 +195,9 @@ int main()
     v.resize(Ny , vector<double>(Nx));
     p.resize(Ny, vector<double>(Nx));
 
+
+
+    
     for (int i = 0; i < Nx; i++)
     {
         for (int j = 0; j < Ny; j++)
@@ -206,6 +209,9 @@ int main()
             p[j][i] = 0;
         }
     }
+
+    
+    
     //////////// END OF THE INITIALIZATION ////////////
 
     //////////// BOUNDARY CONDITIONS////////////
@@ -250,9 +256,7 @@ int main()
 
         calculateGhostCellValues(1, uStar, pressureOutlet,uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
         calculateGhostCellValues(2, vStar, pressureOutlet,uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
-        
-        
-        
+
         ////////// POISSON EQUATION SOLVER //////////
         gsChange = 1.0; // This is set to 1 to enter the while loop
         iteration = 0;  // Counter for the number of iterations in the Gauss-Seidel method
@@ -263,7 +267,7 @@ int main()
             {
                 for (int j = 1; j < Ny - 1; j++)
                 {
-                    velocityStarGrad = (density / timeStepSize) * ((0.5*(uStar[j][i + 1]+uStar[j][i]) - 0.5*(uStar[j][i-1]+uStar[j][i]) + 0.5*(vStar[j-1][i]+vStar[j][i]) - 0.5*(vStar[j + 1][i]+vStar[j][i])) / (h));
+                    velocityStarGrad = (density / timeStepSize) * ((uStar[j][i+1]-uStar[j][i-1]+vStar[j-1][i]-vStar[j+1][i]) / (2*h));
                     p[j][i] = ((p[j][i - 1] + p[j][i + 1] + p[j - 1][i] + p[j + 1][i]) - velocityStarGrad * h * h) * 0.25; // Pressure Poisson equation
                 }
             }
@@ -290,13 +294,13 @@ int main()
         ////// END OF POISSON EQUATION SOLVER ///////
 
         /////////// ANCHORING THE PRESSURE FIELD ////////////
-        for (int i = 0; i < Nx; i++)
-        {
-            for (int j = 0; j < Ny; j++)
-            {
-                p[j][i] = p[j][i] - p[Ny-2][1];
-            }
-        }
+        // for (int i = 0; i < Nx; i++)
+        // {
+        //     for (int j = 0; j < Ny; j++)
+        //     {
+        //         p[j][i] = p[j][i] - p[Ny-2][1];
+        //     }
+        // }
 
         //////////// GHOST CELL VALUES ARE CALCULATED FOR THE PRESSURE FIELD ////////////
         calculateGhostCellValues(0, p, pressureOutlet,uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
@@ -385,16 +389,16 @@ int main()
     U_outputFileColoc << "t      = " << n * timeStepSize << "\n";
     U_outputFileColoc << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
     U_outputFileColoc << "y            u \n";
-    // for (int i = 1; i < Nx - 1; i++)
-    // {
-    //     U_outputFileColoc << std::fixed << std::setprecision(7) <<  (i - 1) * h << "    "
-    //                  << std::fixed << std::setprecision(7) << 0.5 * (u[Ny/2][i] + u[(Ny-2)/2][i]) << "\n";
-    // }
-    for (int j = 1; j < Ny - 1; j++)
+    for (int i = 1; i < Nx - 1; i++)
     {
-        U_outputFileColoc << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
-                     << std::fixed << std::setprecision(7) << u[j][(Nx -1)/2] << "\n";
+        U_outputFileColoc << std::fixed << std::setprecision(7) <<  (i - 1) * h << "    "
+                     << std::fixed << std::setprecision(7) << 0.5 * (u[Ny/2][i] + u[(Ny-2)/2][i]) << "\n";
     }
+    // for (int j = 1; j < Ny - 1; j++)
+    // {
+    //     U_outputFileColoc << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
+    //                  << std::fixed << std::setprecision(7) << u[j][(Nx -1)/2] << "\n";
+    // }
 
     //////////////////////////////////////////////////////////////////////////////
     //////////// OUTPUTTING VERTICAL PRESSURE TO OUTPUT FILE /////////////////////
@@ -410,16 +414,16 @@ int main()
     P_outputFileColoc << "# t = " << n * timeStepSize << "\n";
     P_outputFileColoc << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
     P_outputFileColoc << "y            p \n";
-    // for (int i = 1; i < Nx - 1; i++)
-    // {
-    //     P_outputFileColoc << std::fixed << std::setprecision(7) <<  (i - 1) * h + h / 2 << "    "
-    //                  << std::fixed << std::setprecision(7) << 0.5 * (p[Ny/2][i] + p[(Ny-2)/2][i]) << "\n";
-    // }
-    for (int j = 1; j < Ny - 1; j++)
+    for (int i = 1; i < Nx - 1; i++)
     {
-        P_outputFileColoc << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
-                     << std::fixed << std::setprecision(7) << p[j][(Nx -1)/2] << "\n";
+        P_outputFileColoc << std::fixed << std::setprecision(7) <<  (i - 1) * h + h / 2 << "    "
+                     << std::fixed << std::setprecision(7) << 0.5 * (p[Ny/2][i] + p[(Ny-2)/2][i]) << "\n";
     }
+    // for (int j = 1; j < Ny - 1; j++)
+    // {
+    //     P_outputFileColoc << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
+    //                  << std::fixed << std::setprecision(7) << p[j][(Nx -1)/2] << "\n";
+    // }
 
     U_outputFileColoc.close();
     P_outputFileColoc.close();
@@ -451,6 +455,8 @@ void calculateGhostCellValues(int b, vector<vector<double>> &M,double pressureOu
         {
             M[j][0] = 2 * uLeftWall - M[j][1];
             M[j][Nx-1] = M[j][Nx-2];
+            M[j][Nx-2] = M[j][Nx-3];
+            
         }
         for (int i = Nx - 2; i >= 1; i--)
         {
@@ -472,7 +478,7 @@ void calculateGhostCellValues(int b, vector<vector<double>> &M,double pressureOu
         {
             M[j][0] = 2 * vLeftWall - M[j][1];            // Left wall, ghost cell
             M[j][Nx-1]=M[j][Nx - 2]; // Right wall, ghost cell
-        }
+            M[j][Nx-2] = M[j][Nx-3];        }
     }
     M[0][0] = 0.5 * (M[0][1] + M[1][0]);                               // Top left corner
     M[0][Nx - 1] = 0.5 * (M[0][Nx - 2] + M[1][Nx - 1]);                // Top right corner
