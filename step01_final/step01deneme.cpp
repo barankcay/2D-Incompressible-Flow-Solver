@@ -212,6 +212,7 @@ int main()
     //////////// BOUNDARY CONDITIONS////////////
     calculateGhostNodeValues(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
     calculateGhostNodeValues(2, v, vLeftWall, vRightWall, uTopWall, uBottomWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+    cout<<"heyo";
     calculateGhostNodeValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
     //////////// END OF THE INITIAL BOUNDARY CONDITION ASSIGN SECTION ////////////
     int n = 0; // counter for the time steps
@@ -442,14 +443,12 @@ void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall,
     else if (b == 1)
     {
         
-        for (int i = Nx - 2; i >= 1; i--)
+        for (int i = 1; i <= Nx-1; i++)
         {
-            
+        
+            M[i][0] = 2 * uBottomWall - M[i][1];
+            M[i][Ny - 1] =2*uTopWall-M[i][Ny-2]; // Right wall, u = 0
 
-            M[i][1] = uLeftWall; // Left wall, u = 0
-            M[i][0] = 2 * M[i][1] - M[i][2];
-            M[i][Ny - 1] = uRightWall; // Right wall, u = 0
-            M[i][Ny] = 2 * M[i][Ny - 1] - M[i][Ny - 2];
         }
         for (int j = Ny - 1; j >= 1; j--)
         {
@@ -463,7 +462,6 @@ void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall,
     }
     else if (b == 2)
     {
-        cout<<"heyo";
         for (int j = Ny - 2; j >= 1; j--)
         {
             M[1][j] = vTopWall;
