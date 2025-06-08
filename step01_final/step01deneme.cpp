@@ -211,8 +211,9 @@ int main()
     //////////// END OF THE INITIALIZATION ////////////
     //////////// BOUNDARY CONDITIONS////////////
     calculateGhostNodeValues(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+    
     calculateGhostNodeValues(2, v, vLeftWall, vRightWall, uTopWall, uBottomWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
-    cout<<"heyo";
+
     calculateGhostNodeValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
     //////////// END OF THE INITIAL BOUNDARY CONDITION ASSIGN SECTION ////////////
     int n = 0; // counter for the time steps
@@ -230,7 +231,7 @@ int main()
             for (int j = 1; j < Ny - 1; j++)
             {
                 uAdvection = u[i][j] * (u[i+1][j] - u[i-1][j]) / (2 * h) +
-                             0.25 * (v[i-1][j] + v[i][j] + v[i-1][j-1] + v[i][j - 1]) * (u[i][j + 1] - u[i][j - 1]) / (2 * h);
+                             0.25 * (v[i-1][j] + v[i][j] + v[i-1][j+1] + v[i][j + 1]) * (u[i][j + 1] - u[i][j - 1]) / (2 * h);
                 uDiffuse = (u[i+1][j] + u[i][j - 1] - 4 * u[i][j] + u[i-1][j] + u[i][j + 1]) / (h * h); // d²u/dx² + d²u/dy² (diffusion in X for u)
                 uStar[i][j] = u[i][j] + timeStepSize * (kinematicViscosity * uDiffuse - (uAdvection));
             }
@@ -241,7 +242,7 @@ int main()
             for (int j = 1; j < Ny; j++)
             {
                 vAdvection = v[i][j] * (v[i][j + 1] - v[i][j - 1]) / (2 * h) +
-                             0.25 * (u[i][j + 1] + u[i][j] + u[i + 1][j + 1] + u[i+1][j]) * (v[i+1][j] - v[i-1][j]) / (2 * h);
+                             0.25 * (u[i][j] + u[i][j-1] + u[i+1][j] + u[i+1][j-1]) * (v[i+1][j] - v[i-1][j]) / (2 * h);
                 vDiffuse = (v[i+1][j] + v[i][j - 1] - 4 * v[i][j] + v[i-1][j] + v[i][j + 1]) / (h * h); // d²v/dx² + d²v/dy² (diffusion in Y for v)
                 vStar[i][j] = v[i][j] + timeStepSize * (kinematicViscosity * (vDiffuse) - (vAdvection));
             }
@@ -262,7 +263,7 @@ int main()
             {
                 for (int j = 1; j < Ny - 1; j++)
                 {
-                    velocityStarGrad = (uStar[i+1][j] - uStar[i][j] + vStar[i][j] - vStar[i][j - 1]) / h;
+                    velocityStarGrad = (uStar[i+1][j] - uStar[i][j] + vStar[i][j+1] - vStar[i][j]) / h;
                     p[i][j] = 0.25 * (p[i+1][j] + p[i-1][j] + p[i][j + 1] + p[i][j - 1]) -
                               (h * h * 0.25 * density / timeStepSize) * (velocityStarGrad); // Update pressure using the Poisson equation
                 }
@@ -316,7 +317,7 @@ int main()
         {
             for (int j = 1; j < Ny; j++)
             {
-                v[i][j] = vStar[i][j] - (timeStepSize / density) * ((p[i][j + 1] - p[i][j]) / (h));
+                v[i][j] = vStar[i][j] - (timeStepSize / density) * ((p[i][j] - p[i][j-1]) / (h));
             }
         }
         calculateGhostNodeValues(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
@@ -388,9 +389,9 @@ int main()
     U_outputFile << "t      = " << n * timeStepSize << "\n";
     U_outputFile << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
     U_outputFile << "y            u \n";
-    for (int j = 1; j < Ny - 1; j++)
+    for (int j = Ny-2; j >= 1; j--)
     {
-        U_outputFile << std::fixed << std::setprecision(7) << lengthY - (j - 1) * h - h / 2 << "    "
+        U_outputFile << std::fixed << std::setprecision(7) << (j - 1) * h + h / 2 << "    "
                      << std::fixed << std::setprecision(7) << u[Nx / 2][j] << "\n";
     }
 
@@ -425,15 +426,15 @@ void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall,
 {
     if (b == 0)
     {
-        for (int i = Nx - 2; i >= 1; i--)
+        for (int i = 1; i < Nx-1; i++)
         {
-            M[i][0] = M[i][1];           // Left wall, dp/dx = 0
-            M[i][Ny - 1] = M[i][Ny - 2]; // Right wall, dp/dx = 0
+            M[i][0] = M[i][1];           // Bottom wall, dp/dx = 0
+            M[i][Ny - 1] = M[i][Ny - 2]; // Top wall, dp/dx = 0
         }
-        for (int j = Ny - 2; j >= 1; j--)
+        for (int j = 1; j < Nx-1; j++)
         {
-            M[0][j] = M[1][j];           // Bottom wall, dp/dy = 0
-            M[Nx - 1][j] = M[Nx - 2][j]; // Top wall, dp/dy = 0
+            M[0][j] = M[1][j];           // Left wall, dp/dy = 0
+            M[Nx - 1][j] = M[Nx - 2][j]; // Right wall, dp/dy = 0
         }
         M[0][0] = 0.5 * (M[0][1] + M[1][0]);                               // Top left corner
         M[0][Ny - 1] = 0.5 * (M[0][Ny - 2] + M[1][Ny - 1]);                // Top right corner
@@ -443,17 +444,19 @@ void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall,
     else if (b == 1)
     {
         
-        for (int i = 1; i <= Nx-1; i++)
+        for (int i = 1; i < Nx-1; i++)
         {
         
             M[i][0] = 2 * uBottomWall - M[i][1];
-            M[i][Ny - 1] =2*uTopWall-M[i][Ny-2]; // Right wall, u = 0
+            M[i][Ny - 1] =2*uTopWall- M[i][Ny-2]; // Right wall, u = 0
 
         }
-        for (int j = Ny - 1; j >= 1; j--)
+        for (int j = 1; j <= Ny-1; j++)
         {
-            M[0][j] = 2 * uTopWall - M[1][j];              // Top wall, ghost cell
-            M[Nx - 1][j] = 2 * uBottomWall - M[Nx - 2][j]; // Bottom wall, ghost cell
+            M[0][j] = 2 * uLeftWall - M[1][j];              // Top wall, ghost cell
+            M[1][j]=uLeftWall;
+            M[Nx-1][j]=uRightWall;
+            M[Nx][j] = 2 * uRightWall - M[Nx - 2][j]; // Bottom wall, ghost cell
         }
         M[0][0] = 0.5 * (M[0][1] + M[1][0]);                               // Top left corner
         M[0][Ny] = 0.5 * (M[0][Ny - 1] + M[1][Ny]);                        // Top right corner
@@ -462,22 +465,28 @@ void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall,
     }
     else if (b == 2)
     {
-        for (int j = Ny - 2; j >= 1; j--)
+        for (int j = 1; j <= Ny-1; j++)
         {
-            M[1][j] = vTopWall;
-            M[0][j] = 2 * M[1][j] - M[2][j]; // Top wall, v = 0
+            
+            M[0][j] = 2 * vLeftWall - M[1][j]; // Top wall, v = 0
 
-            M[Nx - 1][j] = vBottomWall; // Bottom wall, ghost cell, v = 0
-            M[Nx][j] = 2 * M[Nx - 1][j] - M[Nx - 2][j];
+            M[Nx - 1][j] = 2*vRightWall-M[Nx-2][j]; // Bottom wall, ghost cell, v = 0
+
         }
-        for (int i = Nx - 1; i >= 1; i--)
+        
+        for (int i = 1; i < Nx-1; i++)
         {
-            M[i][0] = 2 * vLeftWall - M[i][1];            // Left wall, ghost cell
-            M[i][Ny - 1] = 2 * vRightWall - M[i][Ny - 2]; // Right wall, ghost cell
+            
+            M[i][1]=vBottomWall;
+            M[i][0] = 2 * vBottomWall - M[i][2];            // Left wall, ghost cell
+            
+            M[i][Ny - 1] = vTopWall; // Right wall, ghost cell
+            M[i][Ny]=2*vTopWall-M[i][Ny-2];
         }
+        
         M[0][0] = 0.5 * (M[0][1] + M[1][0]);                // Top left corner
-        M[0][Ny - 1] = 0.5 * (M[0][Ny - 2] + M[1][Ny - 1]); // Top right corner
-        M[Nx][0] = 0.5 * (M[Nx - 1][0] + M[Nx][1]);         // Bottom left corner
-        M[Nx][Ny] = 0.5 * (M[Nx][Ny - 1] + M[Nx - 1][Ny]);  // Bottom right corner
+        M[0][Ny] = 0.5 * (M[0][Ny - 1] + M[1][Ny]); // Top right corner
+        M[Nx-1][0] = 0.5 * (M[Nx - 2][0] + M[Nx-1][1]);         // Bottom left corner
+        M[Nx-1][Ny] = 0.5 * (M[Nx-2][Ny] + M[Nx - 1][Ny-1]);  // Bottom right corner
     }
 }
