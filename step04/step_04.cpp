@@ -91,7 +91,7 @@ int main()
     //////////////////////////////////////////////////
     ////////// CHARACTERISTICS OF THE FLOW ///////////
     //////////////////////////////////////////////////
-    double Re = 100;
+    double Re = 1000;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -101,9 +101,9 @@ int main()
     //////////////////////////////////////////////////
     ////////// BOUNDARY CONDITIONS //////////////////
     //////////////////////////////////////////////////
-    double uTopWall = 0.0;    // x direction velocity at the top wall
+    double uTopWall = 1.0;    // x direction velocity at the top wall
     double uBottomWall = 0.0; // x direction velocity at the bottom wall
-    double uLeftWall = 1.0;   // x direction velocity at the left wall
+    double uLeftWall = 0.0;   // x direction velocity at the left wall
     double uRightWall = 0.0;  // x direction velocity at the right wall
     double vTopWall = 0.0;    // y direction velocity at the top wall
     double vBottomWall = 0.0; // y direction velocity at the bottom wall
@@ -117,10 +117,10 @@ int main()
     ////////// GRID PARAMETERS ///////////////////////
     //////////////////////////////////////////////////
     // lengthx and lengthy are the lengths of the domain in the x and y directions, not including ghost cells
-    double lengthX = 10; // Length of the domain in the x direction
+    double lengthX = 1; // Length of the domain in the x direction
     double lengthY = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx = 202;
+    int Nx = 140;
     double h = lengthX / (Nx - 2);
     int Ny = (lengthY / h) + 2; // +2 for ghost cells
     cout<<Ny<<endl;
@@ -189,11 +189,11 @@ int main()
     // u and v fields are have one extra set (not cell) in the x and y directions respectively.
     // reason is to place velocity field around domain other than placing on the boundary.
     // without this approach, for example, far right u velocity point would be on the boundary.
-    u.resize(Ny, vector<double>(Nx));
-    uStar.resize(Ny, vector<double>(Nx));
-    vStar.resize(Ny , vector<double>(Nx));
-    v.resize(Ny , vector<double>(Nx));
-    p.resize(Ny, vector<double>(Nx));
+    u.resize(Nx, vector<double>(Ny));
+    uStar.resize(Nx, vector<double>(Ny));
+    vStar.resize(Nx , vector<double>(Ny));
+    v.resize(Nx , vector<double>(Ny));
+    p.resize(Nx, vector<double>(Ny));
 
 
 
@@ -202,11 +202,11 @@ int main()
     {
         for (int j = 0; j < Ny; j++)
         {
-            u[j][i] = 0;
-            v[j][i] = 0;
-            vStar[j][i] = 0;            
-            uStar[j][i] = 0;
-            p[j][i] = 0;
+            u[i][j] = 0;
+            v[i][j] = 0;
+            vStar[i][j] = 0;            
+            uStar[i][j] = 0;
+            p[i][j] = 0;
         }
     }
 
@@ -234,23 +234,23 @@ int main()
         {
             for (int i = 1; i < Nx-1; i++)
             {
-                un= (u[j][i] + u[j-1][i]) / 2; // Average u velocity at the north face
-                us = (u[j][i] + u[j + 1][i]) / 2; // Average u velocity at the south face
-                ue = (u[j][i] + u[j][i + 1]) / 2; // Average u velocity at the east face
-                uw = (u[j][i] + u[j][i - 1]) / 2; // Average u velocity at the west face
+                un= (u[i][j] + u[i][j+1]) / 2; // Average u velocity at the north face
+                us = (u[i][j] + u[i][j - 1]) / 2; // Average u velocity at the south face
+                ue = (u[i][j] + u[i + 1][j]) / 2; // Average u velocity at the east face
+                uw = (u[i][j] + u[i - 1][j]) / 2; // Average u velocity at the west face
 
-                vn = (v[j][i] + v[j - 1][i]) / 2; // Average v velocity at the north face
-                vw = (v[j][i] + v[j][i - 1]) / 2; // Average v velocity at the west face
-                vs = (v[j][i] + v[j + 1][i]) / 2; // Average v velocity at the south face
-                ve = (v[j][i] + v[j][i + 1]) / 2; // Average v velocity at the east face
+                vn = (v[i][j] + v[i][j + 1]) / 2; // Average v velocity at the north face
+                vw = (v[i][j] + v[i - 1][j]) / 2; // Average v velocity at the west face
+                vs = (v[i][j] + v[i][j - 1]) / 2; // Average v velocity at the south face
+                ve = (v[i][j] + v[i + 1][j]) / 2; // Average v velocity at the east face
                 
                 uAdvection = h * (vn * un - vs * us + ue * ue - uw * uw);                                              // Total advection term for u. v * du/dy + u * du/dx
-                uDiffuse = kinematicViscosity * (u[j][i + 1] + u[j][i - 1] + u[j - 1][i] + u[j + 1][i] - 4 * u[j][i]); // diffusion term
-                uStar[j][i] = u[j][i] + (timeStepSize / (h * h)) * (-uAdvection + uDiffuse);                           // u star velocity field
+                uDiffuse = kinematicViscosity * (u[i + 1][j] + u[i - 1][j] + u[i][j + 1] + u[i][j - 1] - 4 * u[i][j]); // diffusion term
+                uStar[i][j] = u[i][j] + (timeStepSize / (h * h)) * (-uAdvection + uDiffuse);                           // u star velocity field
                 
                 vAdvection = h * (vn * vn - vs * vs + ue * ve - uw * vw);                                              // Total advection term for v. u * dv/dx + v * dv/dy
-                vDiffuse = kinematicViscosity * (v[j][i + 1] + v[j][i - 1] + v[j - 1][i] + v[j + 1][i] - 4 * v[j][i]); // diffusion term
-                vStar[j][i] = v[j][i] + (timeStepSize / (h * h)) * (-vAdvection + vDiffuse);                           // v velocity field
+                vDiffuse = kinematicViscosity * (v[i + 1][j] + v[i - 1][j] + v[i][j + 1] + v[i][j - 1] - 4 * v[i][j]); // diffusion term
+                vStar[i][j] = v[i][j] + (timeStepSize / (h * h)) * (-vAdvection + vDiffuse);                           // v velocity field
             }
         }
 
@@ -267,8 +267,8 @@ int main()
             {
                 for (int j = 1; j < Ny - 1; j++)
                 {
-                    velocityStarGrad = (density / timeStepSize) * ((uStar[j][i+1]-uStar[j][i-1]+vStar[j-1][i]-vStar[j+1][i]) / (2*h));
-                    p[j][i] = ((p[j][i - 1] + p[j][i + 1] + p[j - 1][i] + p[j + 1][i]) - velocityStarGrad * h * h) * 0.25; // Pressure Poisson equation
+                    velocityStarGrad = (density / timeStepSize) * ((uStar[i+1][j]-uStar[i-1][j]+vStar[i][j+1]-vStar[i][j-1]) / (2*h));
+                    p[i][j] = ((p[i - 1][j] + p[i + 1][j] + p[i][j + 1] + p[i][j - 1]) - velocityStarGrad * h * h) * 0.25; // Pressure Poisson equation
                 }
             }
 
@@ -278,7 +278,7 @@ int main()
                 for (int j = 1; j < Ny - 1; j++)
                 {
                     // Calculate the total change in pressure for convergence check
-                    gsChange = gsChange + abs(p[j][i] - pOld[j][i]);
+                    gsChange = gsChange + abs(p[i][j] - pOld[i][j]);
                 }
             }
             gsChange = gsChange / (Nx * Ny); // Average change in pressure
@@ -298,7 +298,7 @@ int main()
         // {
         //     for (int j = 0; j < Ny; j++)
         //     {
-        //         p[j][i] = p[j][i] - p[Ny-2][1];
+        //         p[i][j] = p[i][j] - p[Ny-2][1];
         //     }
         // }
 
@@ -314,8 +314,8 @@ int main()
         {
             for (int j = 1; j < Ny - 1; j++)
             {
-                u[j][i] = uStar[j][i] - (timeStepSize / (h)) * 0.5*((p[j][i+1] - p[j][i - 1]) / density); // Corrector step for u velocity field
-                v[j][i] = vStar[j][i] - (timeStepSize / (h)) * 0.5*((p[j - 1][i] - p[j+1][i]) / density); // Corrector step for v velocity field
+                u[i][j] = uStar[i][j] - (timeStepSize / (h)) * 0.5*((p[i+1][j] - p[i - 1][j]) / density); // Corrector step for u velocity field
+                v[i][j] = vStar[i][j] - (timeStepSize / (h)) * 0.5*((p[i][j + 1] - p[i][j-1]) / density); // Corrector step for v velocity field
             }
         }
 
@@ -333,9 +333,9 @@ int main()
         {
             for (int j = 1; j < Ny - 1; j++)
             {
-                aveChangeU = aveChangeU + abs(u[j][i] - uPrev[j][i]);
-                aveChangeV = aveChangeV + abs(v[j][i] - vPrev[j][i]);
-                aveChangeP = aveChangeP + abs(p[j][i] - pPrev[j][i]);
+                aveChangeU = aveChangeU + abs(u[i][j] - uPrev[i][j]);
+                aveChangeV = aveChangeV + abs(v[i][j] - vPrev[i][j]);
+                aveChangeP = aveChangeP + abs(p[i][j] - pPrev[i][j]);
             }
         }
         aveChangeU = aveChangeU / (Nx * Ny);
@@ -356,7 +356,7 @@ int main()
                  << "  PressChange: " << aveChangeP;
 
             // Print Center U velocity in normal (default) notation
-            cout << std::fixed << "  Center U velocity: " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
+            cout << std::fixed << "  Center U velocity: " << u[(Nx - 1) / 2][(Ny - 1) / 2] << endl;
 
             // Write to file (unchanged)
             averageChangeFile << std::fixed << t << " " << log(aveChangeU) << " " << log(aveChangeV) << " " << log(aveChangeP) << " " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
@@ -391,8 +391,8 @@ int main()
     U_outputFileColoc << "y            u \n";
     for (int i = 1; i < Nx - 1; i++)
     {
-        U_outputFileColoc << std::fixed << std::setprecision(7) <<  (i - 1) * h << "    "
-                     << std::fixed << std::setprecision(7) << 0.5 * (u[Ny/2][i] + u[(Ny-2)/2][i]) << "\n";
+        U_outputFileColoc << std::fixed << std::setprecision(7) <<  (i - 1) * h + h / 2 << "    "
+                     << std::fixed << std::setprecision(7) << 0.5 * (u[i][Ny/2] + u[i][(Ny-2)/2]) << "\n";
     }
     // for (int j = 1; j < Ny - 1; j++)
     // {
@@ -417,7 +417,7 @@ int main()
     for (int i = 1; i < Nx - 1; i++)
     {
         P_outputFileColoc << std::fixed << std::setprecision(7) <<  (i - 1) * h + h / 2 << "    "
-                     << std::fixed << std::setprecision(7) << 0.5 * (p[Ny/2][i] + p[(Ny-2)/2][i]) << "\n";
+                     << std::fixed << std::setprecision(7) << 0.5 * (p[i][Ny/2] + p[i][(Ny-2)/2]) << "\n";
     }
     // for (int j = 1; j < Ny - 1; j++)
     // {
@@ -438,14 +438,14 @@ void calculateGhostCellValues(int b, vector<vector<double>> &M,double pressureOu
     {
         for (int j = Ny - 2; j >= 1; j--)
         {
-            M[j][0] = M[j][1];           // Left wall, dp/dx = 0
-            M[j][Nx - 1] = 2*pressureOutlet-M[j][Nx-2]; // 
+            M[0][j] = M[1][j];           // Left wall, dp/dx = 0
+            M[Nx - 1][j] = 2*pressureOutlet-M[Nx-2][j]; // 
             
         }
         for (int i = Nx - 2; i >= 1; i--)
         {
-            M[0][i] = M[1][i];           // Top wall, dp/dy = 0
-            M[Ny - 1][i] = M[Ny - 2][i]; // Bottom wall, dp/dy = 0
+            M[i][0] = M[i][1];           // Top wall, dp/dy = 0
+            M[i][Ny - 1] = M[i][Ny - 2]; // Bottom wall, dp/dy = 0
         }
 
     }
@@ -453,15 +453,15 @@ void calculateGhostCellValues(int b, vector<vector<double>> &M,double pressureOu
     {
         for (int j = Ny - 2; j >= 1; j--)
         {
-            M[j][0] = 2 * uLeftWall - M[j][1];
-            M[j][Nx-1] = M[j][Nx-2];
-            M[j][Nx-2] = M[j][Nx-3];
+            M[0][j] = 2 * uLeftWall - M[1][j];
+            M[Nx-1][j] = M[Nx-2][j];
+            M[Nx-2][j] = M[Nx-3][j];
             
         }
         for (int i = Nx - 2; i >= 1; i--)
         {
-            M[0][i] = 2 * uTopWall - M[1][i];              // Top wall, ghost cell
-            M[Ny - 1][i] = 2 * uBottomWall - M[Ny - 2][i]; // Bottom wall, ghost cell
+            M[i][0] = 2 * uTopWall - M[i][1];              // Top wall, ghost cell
+            M[i][Ny - 1] = 2 * uBottomWall - M[i][Ny - 2]; // Bottom wall, ghost cell
         }
     }
     else if (b == 2)
@@ -470,69 +470,19 @@ void calculateGhostCellValues(int b, vector<vector<double>> &M,double pressureOu
         for (int i = Nx - 2; i >= 1; i--)
         {
   
-            M[0][i] = 2 * vTopWall - M[1][i]; // Top wall, v = 0
+            M[i][0] = 2 * vTopWall - M[i][1]; // Top wall, v = 0
 
-            M[Ny-1][i] = 2 * vBottomWall - M[Ny - 2][i];
+            M[i][Ny-1] = 2 * vBottomWall - M[i][Ny - 2];
         }
         for (int j = Ny - 2; j >= 1; j--)
         {
-            M[j][0] = 2 * vLeftWall - M[j][1];            // Left wall, ghost cell
-            M[j][Nx-1]=M[j][Nx - 2]; // Right wall, ghost cell
-            M[j][Nx-2] = M[j][Nx-3];        }
+            M[0][j] = 2 * vLeftWall - M[1][j];            // Left wall, ghost cell
+            M[Nx-1][j]=M[j][Nx - 2]; // Right wall, ghost cell
+            M[Nx-2][j] = M[Nx-3][j];        }
     }
-    M[0][0] = 0.5 * (M[0][1] + M[1][0]);                               // Top left corner
-    M[0][Nx - 1] = 0.5 * (M[0][Nx - 2] + M[1][Nx - 1]);                // Top right corner
-    M[Ny - 1][0] = 0.5 * (M[Ny - 2][0] + M[Ny - 1][1]);                // Bottom left corner
-    M[Ny - 1][Nx - 1] = 0.5 * (M[Ny - 1][Nx - 2] + M[Ny - 2][Nx - 1]); // Bottom right corner
+    M[0][0] = 0.5 * (M[1][0] + M[0][1]);                               // Top left corner
+    M[Nx - 1][0] = 0.5 * (M[Nx - 2][0] + M[Nx - 1][1]);                // Top right corner
+    M[0][Ny - 1] = 0.5 * (M[0][Ny - 2] + M[1][Ny - 1]);                // Bottom left corner
+    M[Nx - 1][Ny - 1] = 0.5 * (M[Nx - 2][Ny - 1] + M[Nx - 1][Ny - 2]); // Bottom right corner
     
-}
-
-void calculateGhostCellValues1(int b, vector<vector<double>> &M,double pressureOutlet, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
-{
-
-    if (b == 0)
-    {
-        for (int j = Ny - 2; j >= 1; j--)
-        {
-            M[j][0] = M[j][1];                   // Left wall, dp/dx = 0
-            M[j][Nx - 1] = M[j][Nx - 2]; // Right wall, dp/dx = 0
-        }
-        for (int i = Nx - 2; i >= 1; i--)
-        {
-            M[0][i] = M[1][i];                   // Top wall, dp/dy = 0
-            M[Ny - 1][i] = M[Ny - 2][i]; // Bottom wall, dp/dy = 0
-        }
-    }
-    else if (b == 1)
-    {
-        for (int j = Ny - 2; j >= 1; j--)
-        {
-            M[j][0] = 2 * uLeftWall - M[j][1]; // Left wall,ghost cell,  u = 0
-
-            M[j][Nx - 1] = 2 * uRightWall - M[j][Nx - 2]; // Right wall, u = 0
-        }
-        for (int i = Nx - 2; i >= 1; i--)
-        {
-            M[0][i] = 2 * uTopWall - M[1][i];                      // Top wall, ghost cell
-            M[Ny - 1][i] = 2 * uBottomWall - M[Ny - 2][i]; // Bottom wall, ghost cell
-        }
-    }
-    else if (b == 2)
-    {
-
-        for (int i = Nx - 2; i >= 1; i--)
-        {
-            M[0][i] = 2 * vTopWall - M[1][i];                      // Top wall, v = 0
-            M[Ny - 1][i] = 2 * vBottomWall - M[Ny - 2][i]; // Bottom wall, v = 0
-        }
-        for (int j = Ny - 2; j >= 1; j--)
-        {
-            M[j][0] = 2 * vLeftWall - M[j][1];                    // Left wall, ghost cell
-            M[j][Nx - 1] = 2 * vRightWall - M[j][Nx - 2]; // Right wall, ghost cell
-        }
-    }
-    M[0][0] = 0.5 * (M[0][1] + M[1][0]);                                                       // Top left corner
-    M[0][Nx - 1] = 0.5 * (M[0][Nx - 2] + M[1][Nx - 1]);                            // Top right corner
-    M[Ny - 1][0] = 0.5 * (M[Ny - 2][0] + M[Ny - 1][1]);                            // Bottom left corner
-    M[Ny - 1][Nx - 1] = 0.5 * (M[Ny - 1][Nx - 2] + M[Ny - 2][Nx - 1]); // Bottom right corner
 }

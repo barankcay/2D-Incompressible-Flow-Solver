@@ -1,35 +1,35 @@
 step01: First FDM code (staggered uniform mesh, only LDC)
 Started to working on? +
-Waiting for feedbacks? +
+Waiting for feedbacks? -
 Completed? -
 
 step02: First FVM code (staggered uniform mesh, only LDC)
 Started to working on? +
-Waiting for feedbacks? +
+Waiting for feedbacks? -
 Completed? -
 
 step03: FVM code (similar to above, but also solves channel flow with velocity inlet, pressure outlet)
 Started to working on? +
-Waiting for feedbacks? +
+Waiting for feedbacks? -
 Completed? -
 
 step04: FVM code (similar to above, but works on colocated meshes. No stabilization for checkerboard pressure)
 Started to working on? +
-Waiting for feedbacks? + (Channel flow is not running properly,)
+Waiting for feedbacks? - 
 Completed? -
 
-step04_1: FVM code (similar to above, but also solves Lid driven cavity)
+step05: FVM code (similar to above, but also solves Lid driven cavity)
 Started to working on? +
 Waiting for feedbacks? -
 Completed? -
 
 
-step05: FVM code (similar to above, but with stabilization for checkerboard pressure)
+step06: FVM code (similar to above, but with stabilization for checkerboard pressure)
 Started to working on? -
 Waiting for feedbacks? -
 Completed? -
 
-step06: FVM code (similar to above, but can use Cartesian, non-uniforms meshes)
+step07: FVM code (similar to above, but can use Cartesian, non-uniforms meshes)
 Started to working on? -
 Waiting for feedbacks? -
 Completed? -
