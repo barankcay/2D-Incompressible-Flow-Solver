@@ -130,7 +130,6 @@ int main()
     double uChangeLim = 1e-9; // Average change limit for u velocity
     double vChangeLim = 1e-9; // Average change limit for v velocity
 
-    double gsChange; // Average change in pressure for Gauss-Seidel method
     // The average change is calculated as the sum of the absolute differences between the current and previous values divided by the number of cells
     // When this value is less than the specified limit, the Gauss-Seidel method is considered converged.
 
@@ -274,10 +273,9 @@ int main()
         
         
         ////////// POISSON EQUATION SOLVER //////////
-        gsChange = 1.0; // This is set to 1 to enter the while loop
-        iteration = 0;  // Counter for the number of iterations in the Gauss-Seidel method
-        while (iteration <= 5)
-        // while (gsChange > 1.033961e-04)
+        iteration = 0; // Initialize the iteration counter for the Gauss-Seidel method
+        // while (iteration <= 5)
+        while (iteration < 5)
         {
             pOld = p; // Store the old pressure values for convergence check
             for (int i = 1; i < Nx - 1; i++)
@@ -289,36 +287,6 @@ int main()
                 }
             }
 
-            // gsChange = 0.0; // Reset residual for each iteration
-            // for (int i = 1; i < Nx - 1; i++)
-            // {
-            //     for (int j = 1; j < Ny - 1; j++)
-            //     {
-            //         // Calculate the total change in pressure for convergence check
-            //         gsChange = gsChange + abs(p[i][j] - pOld[i][j]);
-            //     }
-            // }
-            // gsChange = gsChange / ((Nx-2) * (Ny-2)); // Average change in pressure
-            double maxChange = 0.0;
-            for (int i = 1; i < Nx - 1; i++)
-            {
-                for (int j = 1; j < Ny - 1; j++)
-                {
-                    double diff = fabs(p[i][j] - pOld[i][j]);
-                    if (diff > maxChange)
-                    {
-                        maxChange = diff;
-                    }
-                }
-            }
-            gsChange = maxChange;
-
-            if (iteration > gsIterationLimit)
-            {
-                cout << "Gauss-Seidel method did not converge within the maximum number of iterations." << endl;
-                cout << "Exiting the simulation." << endl;
-                exit(1); // Exit the program if Gauss-Seidel method does not converge
-            }
             iteration = iteration + 1; // Increment the iteration counter
         }
         ////// END OF POISSON EQUATION SOLVER ///////
@@ -401,9 +369,8 @@ int main()
             // Print changes in scientific notation
             cout << std::scientific << "  Uchange: " << aveChangeU
                  << "  Vchange: " << aveChangeV
-                 << "  PressChange: " << aveChangeP
-                 << "  GS_Iteration: " << iteration
-                 << "  GS_Change: " << gsChange;
+                 << "  PressChange: " << aveChangeP;
+
 
             // Print Center U velocity in normal (default) notation
             cout << std::fixed << "  Center U velocity: " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
