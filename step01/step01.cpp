@@ -212,7 +212,7 @@ int main()
     //////////// BOUNDARY CONDITIONS////////////
     calculateGhostNodeValues(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
     
-    calculateGhostNodeValues(2, v, vLeftWall, vRightWall, uTopWall, uBottomWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+    calculateGhostNodeValues(2, v, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
 
     calculateGhostNodeValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
     //////////// END OF THE INITIAL BOUNDARY CONDITION ASSIGN SECTION ////////////
@@ -256,7 +256,7 @@ int main()
         ////////// POISSON EQUATION SOLVER //////////
         gsChange = 1.0; // This is set to 1 to enter the while loop
         iteration = 0;  // Counter for the number of iterations in the Gauss-Seidel method
-        while (gsChange > gsChangeLim)
+        while (iteration<= 4)
         {
             pOld = p; // Store the old pressure values for convergence check
             for (int i = 1; i < Nx - 1; i++)
@@ -295,7 +295,7 @@ int main()
         {
             for (int j = 0; j < Ny; j++)
             {
-                p[i][j] = p[i][j] - p[1][1];
+                p[i][j] = p[i][j] - p[1][Ny-2];
             }
         }
         //////////// END OF ANCHORING THE PRESSURE FIELD ////////////
@@ -435,7 +435,7 @@ int main()
     return 0;
 }
 
-void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Ny, int Nx)
+void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
 {
     if (b == 0)
     {

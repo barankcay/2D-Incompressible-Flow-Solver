@@ -188,6 +188,8 @@ int main()
     vStar.resize(Nx, vector<double>(Ny + 1));
     v.resize(Nx, vector<double>(Ny+1));
     p.resize(Nx, vector<double>(Ny));
+    pPrev.resize(Nx, vector<double>(Ny));
+    pOld.resize(Nx, vector<double>(Ny));
 
     for (int i = 0; i < Nx; i++)
     {
@@ -220,7 +222,7 @@ int main()
 
     //////////// BOUNDARY CONDITIONS////////////
     calculateGhostCellValues(1, u, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
-    calculateGhostCellValues(2, v, vLeftWall, vRightWall, uTopWall, uBottomWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
+    calculateGhostCellValues(2, v, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
     calculateGhostCellValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
     //////////// END OF THE INITIAL BOUNDARY CONDITION ASSIGN SECTION ////////////
 
@@ -268,14 +270,14 @@ int main()
             }
         }
         calculateGhostCellValues(1, uStar, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
-        calculateGhostCellValues(2, vStar, vLeftWall, vRightWall, uTopWall, uBottomWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
-        
+        calculateGhostCellValues(2, vStar, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
         
         
         ////////// POISSON EQUATION SOLVER //////////
         gsChange = 1.0; // This is set to 1 to enter the while loop
         iteration = 0;  // Counter for the number of iterations in the Gauss-Seidel method
-        while (gsChange > gsChangeLim)
+        while (iteration <= 5)
+        // while (gsChange > 1.033961e-04)
         {
             pOld = p; // Store the old pressure values for convergence check
             for (int i = 1; i < Nx - 1; i++)
@@ -287,16 +289,29 @@ int main()
                 }
             }
 
-            gsChange = 0.0; // Reset residual for each iteration
+            // gsChange = 0.0; // Reset residual for each iteration
+            // for (int i = 1; i < Nx - 1; i++)
+            // {
+            //     for (int j = 1; j < Ny - 1; j++)
+            //     {
+            //         // Calculate the total change in pressure for convergence check
+            //         gsChange = gsChange + abs(p[i][j] - pOld[i][j]);
+            //     }
+            // }
+            // gsChange = gsChange / ((Nx-2) * (Ny-2)); // Average change in pressure
+            double maxChange = 0.0;
             for (int i = 1; i < Nx - 1; i++)
             {
                 for (int j = 1; j < Ny - 1; j++)
                 {
-                    // Calculate the total change in pressure for convergence check
-                    gsChange = gsChange + abs(p[i][j] - pOld[i][j]);
+                    double diff = fabs(p[i][j] - pOld[i][j]);
+                    if (diff > maxChange)
+                    {
+                        maxChange = diff;
+                    }
                 }
             }
-            gsChange = gsChange / (Nx * Ny); // Average change in pressure
+            gsChange = maxChange;
 
             if (iteration > gsIterationLimit)
             {
@@ -313,7 +328,7 @@ int main()
         {
             for (int j = 0; j < Ny; j++)
             {
-                p[i][j] = p[i][j] - p[Ny-2][1];
+                p[i][j] = p[i][j] - p[1][Ny-2];
             }
         }
         //////////// END OF ANCHORING THE PRESSURE FIELD ////////////
@@ -386,7 +401,9 @@ int main()
             // Print changes in scientific notation
             cout << std::scientific << "  Uchange: " << aveChangeU
                  << "  Vchange: " << aveChangeV
-                 << "  PressChange: " << aveChangeP;
+                 << "  PressChange: " << aveChangeP
+                 << "  GS_Iteration: " << iteration
+                 << "  GS_Change: " << gsChange;
 
             // Print Center U velocity in normal (default) notation
             cout << std::fixed << "  Center U velocity: " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
@@ -454,7 +471,7 @@ int main()
     return 0;
 }
 
-void calculateGhostCellValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Ny, int Nx)
+void calculateGhostCellValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny)
 {
     if (b == 0)
     {
