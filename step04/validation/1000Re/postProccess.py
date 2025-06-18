@@ -1,8 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
 averageChange=np.loadtxt("01_average_change.txt",skiprows=5)
-pressureOutput=np.loadtxt("03_P_output.txt",skiprows=8)
-velocityOutput=np.loadtxt("02_U_output.txt",skiprows=8)
+pressureOutput=np.loadtxt("03_P_output_FVM_Coloc.txt",skiprows=8)
+velocityOutput=np.loadtxt("02_U_output_FVM_Coloc.txt",skiprows=8)
 
 # Average Change Calculation
 time=averageChange[:,0]
@@ -56,9 +56,9 @@ plt.show()
 
 
 plt.figure(figsize=(5,5))
-plt.plot(time,uChange,linestyle="-",linewidth=1,markersize=2,label="uChange",color="red")
-plt.plot(time,vChange,linestyle="-",linewidth=1,markersize=2,label="vChange",color="green")
-plt.plot(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",color="blue")
+plt.semilogy(time,uChange,linestyle="-",linewidth=1,markersize=2,label="uChange",color="red")
+plt.semilogy(time,vChange,linestyle="-",linewidth=1,markersize=2,label="vChange",color="green")
+plt.semilogy(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",color="blue")
 
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('time [s]')

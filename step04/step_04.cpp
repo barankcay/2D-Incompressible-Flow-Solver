@@ -101,26 +101,26 @@ int main()
     //////////////////////////////////////////////////
     ////////// BOUNDARY CONDITIONS //////////////////
     //////////////////////////////////////////////////
-    double uTopWall = 1.0;    // x direction velocity at the top wall
+    double uTopWall = 0.0;    // x direction velocity at the top wall
     double uBottomWall = 0.0; // x direction velocity at the bottom wall
-    double uLeftWall = 0.0;   // x direction velocity at the left wall
+    double uLeftWall = 1.0;   // x direction velocity at the left wall
     double uRightWall = 0.0;  // x direction velocity at the right wall
     double vTopWall = 0.0;    // y direction velocity at the top wall
     double vBottomWall = 0.0; // y direction velocity at the bottom wall
     double vLeftWall = 0.0;   // y direction velocity at the left wall
     double vRightWall = 0.0;  // y direction velocity at the right wall
 
-    double pressureOutlet = 0.0; // Pressure at the outlet
+    double pressureOutlet=0.0;
     //--------------END-OF-THE-SECTION------------------------//
 
     //////////////////////////////////////////////////
     ////////// GRID PARAMETERS ///////////////////////
     //////////////////////////////////////////////////
     // lengthx and lengthy are the lengths of the domain in the x and y directions, not including ghost cells
-    double lengthX = 1; // Length of the domain in the x direction
+    double lengthX = 10; // Length of the domain in the x direction
     double lengthY = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx = 140;
+    int Nx = 202;
     double h = lengthX / (Nx - 2);
     int Ny = (lengthY / h) + 2; // +2 for ghost cells
     cout<<Ny<<endl;
@@ -132,17 +132,15 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////// AVERAGE CHANGE LIMITS OF PARAMETERS OF THE SIMULATION AND PRESSURE POISSON EQ  /////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    double gsChangeLim = 1e-4; // Gauss-Seidel convergence criteria for pressure Poisson equation
-    double pChangeLim = 1e-9; // Average change limit for pressure
-    double uChangeLim = 1e-9; // Average change limit for u velocity
-    double vChangeLim = 1e-9; // Average change limit for v velocity
+    double gsNumOfIte = 1; // Number of iterations for the Gauss-Seidel method
+    double pChangeLim = 3.2e-6; // Average change limit for pressure
+    double uChangeLim = 3e-4; // Average change limit for u velocity
+    double vChangeLim = 5e-4; // Average change limit for v velocity
 
-    double gsChange; // Average change in pressure for Gauss-Seidel method
     // The average change is calculated as the sum of the absolute differences between the current and previous values divided by the number of cells
     // When this value is less than the specified limit, the Gauss-Seidel method is considered converged.
 
     int iteration;                // Counter for the number of iterations in the Gauss-Seidel method
-    int gsIterationLimit = 10000; // Maximum number of iterations for the Gauss-Seidel method
     // If the Gauss-Seidel method does not converge within this number of iterations, the simulation will stop.
     //--------------END-OF-THE-SECTION------------------------//
 
@@ -154,7 +152,7 @@ int main()
     fstream P_outputFileColoc;        // Output file vertical centerline pressure.
     fstream averageChangeFile;   // Output file for average change values
     averageChangeFile.open("01_average_change.txt", std::ios::out);
-    averageChangeFile <<  "Gauss-Seidel change limit: " << gsChangeLim << "\n"
+    averageChangeFile <<  "Gauss-Seidel change limit: " << gsNumOfIte << "\n"
                       << "Pressure change limit: " << pChangeLim << "\n"
                       << "U velocity change limit: " << uChangeLim << "\n"
                       << "V velocity change limit: " << vChangeLim << "\n"
@@ -258,9 +256,8 @@ int main()
         calculateGhostCellValues(2, vStar, pressureOutlet,uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
 
         ////////// POISSON EQUATION SOLVER //////////
-        gsChange = 1.0; // This is set to 1 to enter the while loop
         iteration = 0;  // Counter for the number of iterations in the Gauss-Seidel method
-        while (gsChange > gsChangeLim)
+        while (iteration < gsNumOfIte)
         {
             pOld = p; // Store the old pressure values for convergence check
             for (int i = 1; i < Nx - 1; i++)
@@ -270,24 +267,6 @@ int main()
                     velocityStarGrad = (density / timeStepSize) * ((uStar[i+1][j]-uStar[i-1][j]+vStar[i][j+1]-vStar[i][j-1]) / (2*h));
                     p[i][j] = ((p[i - 1][j] + p[i + 1][j] + p[i][j + 1] + p[i][j - 1]) - velocityStarGrad * h * h) * 0.25; // Pressure Poisson equation
                 }
-            }
-
-            gsChange = 0.0; // Reset residual for each iteration
-            for (int i = 1; i < Nx - 1; i++)
-            {
-                for (int j = 1; j < Ny - 1; j++)
-                {
-                    // Calculate the total change in pressure for convergence check
-                    gsChange = gsChange + abs(p[i][j] - pOld[i][j]);
-                }
-            }
-            gsChange = gsChange / (Nx * Ny); // Average change in pressure
-
-            if (iteration > gsIterationLimit)
-            {
-                cout << "Gauss-Seidel method did not converge within the maximum number of iterations." << endl;
-                cout << "Exiting the simulation." << endl;
-                exit(1); // Exit the program if Gauss-Seidel method does not converge
             }
             iteration = iteration + 1; // Increment the iteration counter
         }
@@ -359,7 +338,7 @@ int main()
             cout << std::fixed << "  Center U velocity: " << u[(Nx - 1) / 2][(Ny - 1) / 2] << endl;
 
             // Write to file (unchanged)
-            averageChangeFile << std::fixed << t << " " << log(aveChangeU) << " " << log(aveChangeV) << " " << log(aveChangeP) << " " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
+            averageChangeFile << std::fixed << std::setprecision(10) << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
         } // Check for convergence.
         // If the average change in u, v and p is less than the specified limits, the simulation is considered converged.
         // If the simulation is converged, break the loop and output the final time step size.
