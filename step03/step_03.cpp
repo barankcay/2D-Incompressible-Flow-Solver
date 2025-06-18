@@ -366,7 +366,7 @@ int main()
             cout << std::fixed << "  Center U velocity: " << u[(Nx) / 2][(Ny) / 2] << endl;
 
             // Write to file (unchanged)
-            averageChangeFile << std::fixed << std::setprecision(10) << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
+            averageChangeFile << std::fixed << std::setprecision(10) << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << u[(Nx) / 2][(Ny) / 2] << endl;
         } // Check for convergence.
         // If the average change in u, v and p is less than the specified limits, the simulation is considered converged.
         // If the simulation is converged, break the loop and output the final time step size.

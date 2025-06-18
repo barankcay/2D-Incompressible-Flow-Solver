@@ -2,8 +2,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 averageChange=np.loadtxt("01_average_change.txt",skiprows=5)
 ghia=np.loadtxt("ghia3200.txt")
-pressureOutput=np.loadtxt("03_P_output.txt",skiprows=8)
-velocityOutput=np.loadtxt("02_U_output.txt",skiprows=8)
+pressureOutput=np.loadtxt("03_P_output_FVM_Coloc.txt",skiprows=8)
+velocityOutput=np.loadtxt("02_U_output_FVM_Coloc.txt",skiprows=8)
 
 # Average Change Calculation
 time=averageChange[:,0]
@@ -25,7 +25,7 @@ plt.grid()
 # plt.plot(colocVeloc,colocCoord,linestyle="-",marker='d',linewidth=0.5,markersize=2,label="11x11coloc",color="red")
 # plt.plot(stagVeloc,stagCoord,linestyle="-",marker='o',linewidth=0.5,markersize=2,label="11x11stag",color="blue")
 plt.plot(ghiaU,ghiaY,"o",label="Ghia [?]",color="green")
-plt.plot(u,y,linestyle="-",linewidth=0.5,markersize=2,label="FVMStag",color="blue")
+plt.plot(u,y,linestyle="-",linewidth=0.5,markersize=2,label="FVMColoc",color="blue")
 
 # plt.plot(colocCSVeloc,colocCSCoord,linestyle="--",linewidth=1,label="coloc CS",color="blue")
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
@@ -39,9 +39,9 @@ plt.show()
 
 ########################################
 plt.figure(figsize=(5,5))
-plt.plot(time,uChange,linestyle="-",linewidth=1,markersize=2,label="uChange",color="red")
-plt.plot(time,vChange,linestyle="-",linewidth=1,markersize=2,label="vChange",color="green")
-plt.plot(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",color="blue")
+plt.semilogy(time,uChange,linestyle="-",linewidth=1,markersize=2,label="uChange",color="red")
+plt.semilogy(time,vChange,linestyle="-",linewidth=1,markersize=2,label="vChange",color="green")
+plt.semilogy(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",color="blue")
 
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('time [s]')

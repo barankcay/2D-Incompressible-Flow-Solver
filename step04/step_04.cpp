@@ -177,7 +177,7 @@ int main()
     // The time step size is calculated using the minimum of the two criteria
     // For 2D channel flow, theoreticaly, the maximum velocity can be observed is 1.5*uniformInletVelocity
     // So, for maximum velocity, we use 1.5 * uLeftWall in the second criteria.
-    double timeStepSize = min((h * h) / (4 * dynamicViscosity), 2 * dynamicViscosity / (4));
+    double timeStepSize = min((h * h) / (4 * dynamicViscosity), 2 * dynamicViscosity / (1.5*uLeftWall));
     //////////// END OF THE TIME STEP SIZE CALCULATION ////////////
     //////////////////////////////////////////////////////////////////////////////
     //////////// INITIALIZATION and ASSIGNING DIMENSION OF THE FIELDS ////////////
@@ -272,15 +272,6 @@ int main()
         }
         ////// END OF POISSON EQUATION SOLVER ///////
 
-        /////////// ANCHORING THE PRESSURE FIELD ////////////
-        // for (int i = 0; i < Nx; i++)
-        // {
-        //     for (int j = 0; j < Ny; j++)
-        //     {
-        //         p[i][j] = p[i][j] - p[Ny-2][1];
-        //     }
-        // }
-
         //////////// GHOST CELL VALUES ARE CALCULATED FOR THE PRESSURE FIELD ////////////
         calculateGhostCellValues(0, p, pressureOutlet,uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
 
@@ -335,10 +326,10 @@ int main()
                  << "  PressChange: " << aveChangeP;
 
             // Print Center U velocity in normal (default) notation
-            cout << std::fixed << "  Center U velocity: " << u[(Nx - 1) / 2][(Ny - 1) / 2] << endl;
+            cout << std::fixed << "  Center U velocity: " << u[(Nx) / 2][(Ny) / 2] << endl;
 
             // Write to file (unchanged)
-            averageChangeFile << std::fixed << std::setprecision(10) << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
+            averageChangeFile << std::fixed << std::setprecision(10) << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << u[(Nx) / 2][(Ny) / 2] << endl;
         } // Check for convergence.
         // If the average change in u, v and p is less than the specified limits, the simulation is considered converged.
         // If the simulation is converged, break the loop and output the final time step size.

@@ -31,7 +31,7 @@ plt.xlim(0, 12)
 
 # plt.ylim(0,1)
 plt.legend()
-plt.savefig("02_FVM_stag_centerlineVelocity.svg")
+plt.savefig("02_FVM_Coloc_centerlineVelocity.svg")
 
 plt.show()
 plt.figure(figsize=(5,5))
@@ -50,7 +50,7 @@ plt.xlim(0, 12)
 
 # plt.ylim(0,1)
 plt.legend()
-plt.savefig("03_FVM_stag_centerlinePressure.svg")
+plt.savefig("03_FVM_Coloc_centerlinePressure.svg")
 
 plt.show()
 
@@ -72,7 +72,7 @@ plt.title('Channel Flow 1000Re / 200x20')
 
 # plt.ylim(0,1)
 plt.legend()
-plt.savefig("01_FVM_stag_averageChange.svg")
+plt.savefig("01_FVM_Coloc_averageChange.svg")
 
 plt.show()
 
