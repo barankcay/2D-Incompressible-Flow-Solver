@@ -31,7 +31,7 @@ plt.plot(u,y,linestyle="-",linewidth=0.5,markersize=2,label="FVMStag",color="blu
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('U [m/s]')
 plt.ylabel('y [m]')
-plt.title('LDC 100Re / 110x110')
+plt.title('LDC 100Re / 180x180')
 plt.legend()
 plt.savefig("01_FVM_StaggeredVsGhia_100.svg")
 plt.show()
@@ -39,14 +39,14 @@ plt.show()
 
 
 plt.figure(figsize=(5,5))
-plt.plot(time,uChange,linestyle="-",linewidth=1,markersize=2,label="uChange",color="red")
-plt.plot(time,vChange,linestyle="-",linewidth=1,markersize=2,label="vChange",color="green")
-plt.plot(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",color="blue")
+plt.semilogy(time,uChange,linestyle="-",linewidth=1,markersize=2,label="uChange",color="red")
+plt.semilogy(time,vChange,linestyle="-",linewidth=1,markersize=2,label="vChange",color="green")
+plt.semilogy(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",color="blue")
 
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('time [s]')
 plt.ylabel('Average change')
-plt.title('LDC 100Re / 110x110')
+plt.title('LDC 100Re / 180x180')
 
 # plt.xlim(0,30)
 # plt.xlim(-0.4,1)
@@ -62,7 +62,7 @@ plt.figure(figsize=(5,5))
 
 plt.xlabel('time [s]')
 plt.ylabel('u [m/s]')
-plt.title('LDC 100Re / 110x110')
+plt.title('LDC 100Re / 180x180')
 
 plt.grid()
 plt.plot(time,uMid,linestyle="-",linewidth=1,markersize=2,label="uMid",color="black")

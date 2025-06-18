@@ -39,10 +39,9 @@ plt.show()
 
 ########################################
 plt.figure(figsize=(5,5))
-plt.plot(time,uChange,linestyle="-",linewidth=1,markersize=2,label="uChange",color="red")
-plt.plot(time,vChange,linestyle="-",linewidth=1,markersize=2,label="vChange",color="green")
-plt.plot(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",color="blue")
-
+plt.semilogy(time,uChange,linestyle="-",linewidth=1,markersize=2,label="uChange",color="red")
+plt.semilogy(time,vChange,linestyle="-",linewidth=1,markersize=2,label="vChange",color="green")
+plt.semilogy(time,pChange,linestyle="-",linewidth=1,markersize=2,label="pChange",color="blue")
 plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 plt.xlabel('time [s]')
 plt.ylabel('Average Change')
