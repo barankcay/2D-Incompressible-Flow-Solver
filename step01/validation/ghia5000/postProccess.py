@@ -24,7 +24,7 @@ plt.figure(figsize=(5,5))
 plt.grid()
 # plt.plot(colocVeloc,colocCoord,linestyle="-",marker='d',linewidth=0.5,markersize=2,label="11x11coloc",color="red")
 # plt.plot(stagVeloc,stagCoord,linestyle="-",marker='o',linewidth=0.5,markersize=2,label="11x11stag",color="blue")
-plt.plot(ghiaU,ghiaY,"o",label="Ghia [?]",color="green")
+plt.plot(ghiaU,ghiaY,"o",label="Ghia [10]",color="green")
 plt.plot(u,y,linestyle="-",linewidth=0.5,markersize=2,label="fdmStag",color="blue")
 
 # plt.plot(colocCSVeloc,colocCSCoord,linestyle="--",linewidth=1,label="coloc CS",color="blue")
@@ -59,7 +59,7 @@ plt.savefig("02_averageChange.svg")
 plt.show()
 
 #########################################3
-plt.figure(figsize=(5,5))
+plt.figure(figsize=(6,6))
 plt.xlabel('time [s]')
 plt.ylabel('u [m/s]')
 plt.title('LDC 5000Re / 180x180')
