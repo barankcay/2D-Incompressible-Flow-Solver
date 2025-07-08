@@ -118,10 +118,10 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////// AVERAGE CHANGE LIMITS OF PARAMETERS OF THE SIMULATION AND PRESSURE POISSON EQ  /////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    double gsNumOfIte = 1; // Number of iterations for the Gauss-Seidel method
-    double pChangeLim = 1e-8; // Average change limit for pressure
-    double uChangeLim = 1e-8; // Average change limit for u velocity
-    double vChangeLim = 1e-8; // Average change limit for v velocity
+    double gsNumOfIte = 4; // Number of iterations for the Gauss-Seidel method
+    double pChangeLim = 1e-10; // Average change limit for pressure
+    double uChangeLim = 1e-10; // Average change limit for u velocity
+    double vChangeLim = 1e-10; // Average change limit for v velocity
 
     // The average change is calculated as the sum of the absolute differences between the current and previous values divided by the number of nodes
     // When this value is less than the specified limit, the Gauss-Seidel method is considered converged.
