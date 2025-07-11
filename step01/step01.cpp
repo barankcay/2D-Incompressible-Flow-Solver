@@ -107,7 +107,7 @@ int main()
     double lengthX = 1; // Length of the domain in the x direction
     double lengthY = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx = 180;
+    int Nx = 32;
     double h = lengthX / (Nx - 2);
     int Ny = (lengthY / h) + 2; // +2 for ghost cells
     //!!!!!! Since uniform grid spacing is used, this way of calculating Ny is still valid.
@@ -118,10 +118,10 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////// AVERAGE CHANGE LIMITS OF PARAMETERS OF THE SIMULATION AND PRESSURE POISSON EQ  /////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    double gsNumOfIte = 4; // Number of iterations for the Gauss-Seidel method
-    double pChangeLim = 1e-10; // Average change limit for pressure
-    double uChangeLim = 1e-10; // Average change limit for u velocity
-    double vChangeLim = 1e-10; // Average change limit for v velocity
+    double gsNumOfIte = 1; // Number of iterations for the Gauss-Seidel method
+    double pChangeLim = 1e-9; // Average change limit for pressure
+    double uChangeLim = 1e-9; // Average change limit for u velocity
+    double vChangeLim = 1e-9; // Average change limit for v velocity
 
     // The average change is calculated as the sum of the absolute differences between the current and previous values divided by the number of nodes
     // When this value is less than the specified limit, the Gauss-Seidel method is considered converged.
@@ -168,6 +168,8 @@ int main()
     //////////////////////////////////////////////////////////////////////////////
     //////////// INITIALIZATION and ASSIGNING DIMENSION OF THE FIELDS ////////////
     //////////////////////////////////////////////////////////////////////////////
+    cout<<"timeStepSize: " << timeStepSize << endl;
+
     // Initialize the fields and assign number of nodes in each direction
     // adding one extra node in each direction. u and v fields are have one extra node in the x and y directions respectively.
     // reason is to place velocity field around domain other than placing on the boundary.
@@ -393,8 +395,8 @@ int main()
     //////////// because there is no pressure node at the center vertical line of the domain //
     //////////////////////////////////////////////////////////////////////////////
     P_outputFile.open("03_P_output.txt", std::ios::out);
-    P_outputFile << "# nx = " << Nx << "\n";
-    P_outputFile << "# ny = " << Ny << "\n";
+    P_outputFile << "# nx = " << Nx -2<< "\n";
+    P_outputFile << "# ny = " << Ny -2<< "\n";
     P_outputFile << "# dt = " << timeStepSize << "\n";
     P_outputFile << "# Re = " << Re << "\n";
     P_outputFile << "# n = " << n << "\n";
