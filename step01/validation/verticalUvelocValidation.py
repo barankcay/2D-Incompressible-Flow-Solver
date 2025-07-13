@@ -13,10 +13,14 @@ for folders in os.listdir(workingDir):
     if not os.path.isdir(foldersDirection):
         continue
     for file in os.listdir(foldersDirection):
-        fullPath = os.path.join(foldersDirection, file)
+
         if file.startswith("ghia") and file.endswith(".txt"):
+            print(file)
+            fullPath = os.path.join(foldersDirection, file)
+
             ghia.append(np.loadtxt(fullPath))
         elif file.startswith("02_U_") and file.endswith(".txt"):
+            fullPath = os.path.join(foldersDirection, file)
             U.append(np.loadtxt(fullPath, skiprows=8))
 
 # Limit to 5 plots
@@ -45,7 +49,7 @@ for i in range(num_plots):
     y = U_data[:, 0]
 
     ax = axes[i]
-    ax.plot(ghiaU, ghiaY, "o", label="Ghia [10]", color="green",markersize='11')
+    ax.plot(ghiaU, ghiaY, "o", label="Ghia [8]", color="green",markersize='11')
     ax.plot(u, y, "-", linewidth=2.0, label="Current Study", color="blue")
     ax.set_title(headline[i], fontsize='20')
     
