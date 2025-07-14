@@ -971,9 +971,9 @@ int main()
     // cfg.hx = cfg.lengthX / (cfg.Nx - 2); // Grid spacing in the x-direction
     // cfg.hy = cfg.lengthY / (cfg.Ny - 2); // Grid spacing in the y-direction
     cfg.poissonTolerance = 1e-4; // Tolerance for the Poisson equation solver
-    cfg.timeToleranceU = 1e-12;  // Tolerance for the time loop convergence
-    cfg.timeToleranceV = 1e-12;  // Tolerance for the time loop convergence
-    cfg.timeToleranceP = 1e-12;  // Tolerance for the time loop convergence
+    cfg.timeToleranceU = 1e-3;  // Tolerance for the time loop convergence
+    cfg.timeToleranceV = 1e-2;  // Tolerance for the time loop convergence
+    cfg.timeToleranceP = 1e-2;  // Tolerance for the time loop convergence
 
     cfg.startTime = 0.0;   // Start time of the simulation
     cfg.endTime = 10000.0; // End time of the simulation. Since we have a convergence criteria, this is set to a large number

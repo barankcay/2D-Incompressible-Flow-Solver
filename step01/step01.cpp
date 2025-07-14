@@ -136,6 +136,7 @@ int main()
     fstream U_outputFile;        // Output file vertical centerline u velocity
     fstream P_outputFile;        // Output file vertical centerline pressure.
     fstream averageChangeFile;   // Output file for average change values
+    fstream vtkFile; // Output file for VTK format
     averageChangeFile.open("01_average_change.txt", std::ios::out);
     averageChangeFile <<"Number of Gauss-Seidel iterations: " << gsNumOfIte << "\n"
                     << "Pressure change limit: " << pChangeLim << "\n"
@@ -408,11 +409,42 @@ int main()
         P_outputFile << std::fixed << std::setprecision(7) << (j - 1) * h + h / 2 << "    "
                      << std::fixed << std::setprecision(7) << 0.5 * (p[(Nx / 2) - 1][j] + p[(Nx / 2)][j]) << "\n";
     }
+    //////////////////////////////////////////////////////////////////////////////
+    //////////// OUTPUTTING VTK FILE FOR VISUALIZATION ///////////////////////////
+    vtkFile.open("04_output.vtk", std::ios::out);
+    vtkFile << "# vtk DataFile Version 2.0\n";
+    vtkFile << "Lid Driven Cavity Flow\n";
+    vtkFile << "ASCII\n";
+    vtkFile << "DATASET STRUCTURED_GRID\n";
+    vtkFile << "DIMENSIONS " << Nx-1 << " " << Ny-1 << " 1\n";
+    vtkFile << "POINTS " << (Nx-1) * (Ny-1) << " float\n";
+    for (int j = 0; j < Ny - 1; j++)
+    {
+        for (int i = 0; i < Nx - 1; i++)
+        {
+            vtkFile << std::fixed << std::setprecision(7) << i * h << " "
+                    << std::fixed << std::setprecision(7) << j * h << " "
+                    << "0.0\n";
+        }
+    }
+    vtkFile << "POINT_DATA " << (Nx-1) * (Ny-1) << "\n";
+    vtkFile << "VECTORS velocity float\n";
+    for (int j = 0; j < Ny - 1; j++)
+    {
+        for (int i = 0; i < Nx - 1; i++)
+        {
+            vtkFile << std::fixed << std::setprecision(7) << 0.5*(u[i+1][j+1]+u[i+1][j]) << " "
+                    << std::fixed << std::setprecision(7) << 0.5*(v[i][j+1]+v[i+1][j+1]) << " "
+                    << "0.0\n";
+        }
+    }
 
     U_outputFile.close();
     P_outputFile.close();
     averageChangeFile.close();
+    vtkFile.close();
 
+   
     return 0;
 }
 
