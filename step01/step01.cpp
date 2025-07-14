@@ -80,7 +80,7 @@ int main()
     //////////////////////////////////////////////////
     ////////// CHARACTERISTICS OF THE FLOW ///////////
     //////////////////////////////////////////////////
-    double Re = 5000;
+    double Re = 1000;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -107,7 +107,7 @@ int main()
     double lengthX = 1; // Length of the domain in the x direction
     double lengthY = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx = 32;
+    int Nx = 180;
     double h = lengthX / (Nx - 2);
     int Ny = (lengthY / h) + 2; // +2 for ghost cells
     //!!!!!! Since uniform grid spacing is used, this way of calculating Ny is still valid.
@@ -411,7 +411,7 @@ int main()
     }
     //////////////////////////////////////////////////////////////////////////////
     //////////// OUTPUTTING VTK FILE FOR VISUALIZATION ///////////////////////////
-    vtkFile.open("04_output.vtk", std::ios::out);
+    vtkFile.open("04_velocityField.txt", std::ios::out);
     vtkFile << "# vtk DataFile Version 2.0\n";
     vtkFile << "Lid Driven Cavity Flow\n";
     vtkFile << "ASCII\n";
