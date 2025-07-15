@@ -80,7 +80,7 @@ int main()
     //////////////////////////////////////////////////
     ////////// CHARACTERISTICS OF THE FLOW ///////////
     //////////////////////////////////////////////////
-    double Re = 1000;
+    double Re = 5000;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -107,7 +107,7 @@ int main()
     double lengthX = 1; // Length of the domain in the x direction
     double lengthY = 1; // Length of the domain in the y direction
     // Nx and Ny are the number of cells in the x and y directions, including ghost cells
-    int Nx = 180;
+    int Nx = 182;
     double h = lengthX / (Nx - 2);
     int Ny = (lengthY / h) + 2; // +2 for ghost cells
     //!!!!!! Since uniform grid spacing is used, this way of calculating Ny is still valid.

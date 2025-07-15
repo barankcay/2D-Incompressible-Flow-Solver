@@ -41,8 +41,8 @@ for i in range(len(U)):
 
 # Add markers at those points
     # plt.scatter(u[indices], y[indices], marker=marker[i])  # 'b^' = blue triangle
-    plt.xlabel('U [m/s]')
-    plt.ylabel('y [m]')
+    plt.xlabel('u')
+    plt.ylabel('y')
     plt.legend()
 
 plt.savefig("5000Re_meshIndependenceStudy.svg")

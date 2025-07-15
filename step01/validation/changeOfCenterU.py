@@ -45,8 +45,8 @@ for i in range(num_plots):
     
 
     ax.legend()
-    ax.set_xlabel('Time [s]', fontsize='20')
-    ax.set_ylabel('U [m/s]', fontsize='20')
+    ax.set_xlabel('Time', fontsize='20')
+    ax.set_ylabel('u', fontsize='20')
     ax.grid(True)
     
     # Make axis tick labels bigger

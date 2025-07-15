@@ -55,7 +55,7 @@ def create_streamline_plot(points, velocities, grid_size=(179,179)):
     # Plot simple black streamlines
     ax.streamplot(xi, yi, u, v,
                  color='black',
-                 density=3,
+                 density=1.6,
                  linewidth=0.6,
                  arrowstyle='-',
                  broken_streamlines=False,
@@ -63,7 +63,8 @@ def create_streamline_plot(points, velocities, grid_size=(179,179)):
     
     # Set equal aspect ratio
     ax.set_aspect('equal')
-    
+    ax.set_xlabel('x [m]', fontsize='20')
+    ax.set_ylabel('y [m]', fontsize='20')
     plt.tight_layout()
     plt.savefig('result.svg')
     plt.show()
@@ -71,7 +72,7 @@ def create_streamline_plot(points, velocities, grid_size=(179,179)):
 # Main execution
 if __name__ == "__main__":
     # Parse the VTK file
-    points, velocities = parse_vtk('04_output.txt')
+    points, velocities = parse_vtk('04_velocityField.txt')
     
     # Create streamline plot
     create_streamline_plot(points, velocities, grid_size=(179, 179))
