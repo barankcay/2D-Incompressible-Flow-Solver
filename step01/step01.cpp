@@ -35,7 +35,12 @@
 #include <chrono>
 using namespace std;
 
+#include "matplotlibcpp.h"
+namespace plt = matplotlibcpp;
 
+// Add these variables after your other variable declarations
+vector<double> time_plot;
+vector<double> velocity_plot;
 void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall,
                               double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny);
 
@@ -87,6 +92,7 @@ int main()
     double vTopWall    = 0.0; 
     double vLeftWall   = 0.0;
     double vRightWall  = 0.0;
+    double vBottomWall = 0.0;   
     
 
     
@@ -109,10 +115,13 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     double gsNumOfIte = 1;     // Max. number of iterations for the Gauss-Seidel method
                                // TODO: Change its name to maxGSiter.
-    double pChangeLim = 1e-9;  // Convergence tolerance for pressure
-    double uChangeLim = 1e-9;  // Convergence tolerance for u velocity
-    double vChangeLim = 1e-9;  // Convergence tolerance for v velocity
-
+    double pChangeLim = 1e-6;  // Convergence tolerance for pressure
+    double uChangeLim = 1e-7;  // Convergence tolerance for u velocity
+    double vChangeLim = 1e-7;  // Convergence tolerance for v velocity
+    double aveChangeU;
+    double aveChangeV;
+    double aveChangeP;
+    double uCenter;
     // The average change of u, v and p unknowns are calculated as the sum of the absolute differences between the
     // current and the previous values of all nodes divided by the number of nodes. When this value is less than the
     // specified tolerances, the Gauss-Seidel method (or the overall solution) is considered to be converged.
@@ -158,8 +167,7 @@ int main()
     // CRITERIA 2 ===> 2 * dynamicViscosity / uTopWall^2
     // The time step size is calculated using the minimum of the two criteria
     // Lid driven cavity provblem's lid speed (uTopWall) is used in the second criteria for the maximum reference speed.
-    double timeStepSize = min(h^2 / (4*dynamicViscosity), 2 * dynamicViscosity / uTopWall^2;
-    
+    double timeStepSize = min(h*h / (4*dynamicViscosity), 2 * dynamicViscosity / (uTopWall*uTopWall));
     
     
     //////////////////////////////////////////////////////////
@@ -292,9 +300,9 @@ int main()
         // CONVERGENCE CHECK
         ///////////////////////////////////////////
         // Calculate the average change in u, v and p from the previous time step to this one
-        double aveChangeU = 0.0;
-        double aveChangeV = 0.0;
-        double aveChangeP = 0.0;
+        aveChangeU = 0.0;
+        aveChangeV = 0.0;
+        aveChangeP = 0.0;
         for (int i = 1; i < Nx - 1; i++) {
             for (int j = 1; j < Ny - 1; j++) {
                 aveChangeP = aveChangeP + abs(p[i][j] - pPrev[i][j]);
@@ -313,7 +321,8 @@ int main()
         aveChangeU = aveChangeU / (Nx * Ny);
         aveChangeV = aveChangeV / (Nx * Ny);
         aveChangeP = aveChangeP / (Nx * Ny);
-        
+        uCenter=0.5*(u[(Nx) / 2][(Ny - 2) / 2] + u[(Nx) / 2][(Ny) / 2]);
+
         // Output the average change values and center u velocity to the console and to the average change file
         if (remainder(n, periodOfOutput) == 0) {
             cout << "Time: " << std::fixed << t;
@@ -323,10 +332,10 @@ int main()
                                     << "  PressChange: " << aveChangeP;
 
             // Print Center U velocity in normal (default) notation
-            cout << std::fixed << "  Center U velocity: " << u[Nx / 2][Ny / 2] << endl;
+            cout << std::fixed << "  Center U velocity: " << uCenter << endl;
 
             // Write to file (unchanged)
-            averageChangeFile << std::fixed << std::setprecision(9) << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << u[(Ny - 1) / 2][(Nx - 1) / 2] << endl;
+            averageChangeFile << std::fixed << std::setprecision(9) << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << uCenter<< endl;
         }
         
         // Check for convergence
@@ -335,6 +344,19 @@ int main()
         if (aveChangeU < uChangeLim && aveChangeV < vChangeLim && aveChangeP < pChangeLim) {
             cout << "Converged at time: " << t << endl;
             break;
+        }
+        time_plot.push_back(t);
+        velocity_plot.push_back(uCenter);
+        
+        // Update plot every few iterations to avoid too frequent updates
+        if (n % (periodOfOutput * 2) == 0) {  // Plot every 200 iterations
+            plt::clf();
+            plt::plot(time_plot, velocity_plot, "b-");
+            plt::xlabel("Time");
+            plt::ylabel("Center U Velocity");
+            plt::title("Real-time Center Velocity");
+            plt::grid(true);
+            plt::pause(0.001);
         }
         n++;
     }
@@ -420,7 +442,10 @@ int main()
     P_outputFile.close();
     averageChangeFile.close();
     vtkFile.close();
-
+    
+    plt::ioff();  // Turn off interactive mode
+    plt::show();
+    plt::save("center_velocity_final.png");
     return 0;
 }  // End of the main function
 
