@@ -109,9 +109,13 @@ int main()
     //////////////////////////////////////////////////
     double lengthX = 1;  // Length of the domain in the x direction (not including the ghost nodes)
     double lengthY = 1;  // Length of the domain in the y direction (not including the ghost nodes)
-    int Nx = 182;        // Number of nodes in the x direction (including ghost nodes)
+    int Nx = 181;        // Number of nodes in the x direction (including ghost nodes)
                          // Note: Specify an even value for parctical reasons.
                          // TODO: Check whether an even value is specified or not.
+    if (Nx % 2 != 0) {
+        cout << "Nx should be an even number. Please change it." << endl;
+        return -1; // Exit the program if Nx is not even
+    }
     double h = lengthX / (Nx - 2);   // Uniform grid spacing (h = dx = dy)
     int Ny = (lengthY / h) + 2;      // +2 for ghost nodes
     // Note: If the domain is square, Nx and Ny will be equal
@@ -121,7 +125,7 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // ITERATION NUMBERS and CONVERGENCE TOLERANCES
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    double gsNumOfIte = 30;     // Max. number of iterations for the Gauss-Seidel method
+    double maxGSiter = 30;     // Max. number of iterations for the Gauss-Seidel method
                                // TODO: Change its name to maxGSiter.
     double pChangeLim = 1e-6;  // Convergence tolerance for pressure
     double uChangeLim = 1e-7;  // Convergence tolerance for u velocity
@@ -132,11 +136,7 @@ int main()
     double uCenter;
     // The average change of u, v and p unknowns are calculated as the sum of the absolute differences between the
     // current and the previous values of all nodes divided by the number of nodes. When this value is less than the
-    // specified tolerances, the Gauss-Seidel method (or the overall solution) is considered to be converged.
-
-    int iteration;  // Counter for the number of iterations in the Gauss-Seidel method
-                    // TODO: Remove this after converting the GS loop to a FOR loop.
-    
+    // specified tolerances, the Gauss-Seidel method (or the overall solution) is considered to be converged.    
     
     
     //////////////////////////////////////////////////////////
@@ -153,14 +153,14 @@ int main()
     //////////////////////////////////////////////////
     // OUTPUT CONTROL PARAMETERS
     //////////////////////////////////////////////////
-    double periodOfOutput = 100; // Time period for outputting average change and screen output
+    double periodOfOutput = 5; // Time period for outputting average change and screen output
     fstream U_outputFile;        // Output file vertical centerline u velocity
     fstream P_outputFile;        // Output file vertical centerline pressure.
     fstream averageChangeFile;   // Output file for average changes of unknonws
     fstream vtkFile;             // Output file in VTK format
     
     averageChangeFile.open("01_average_change.txt", std::ios::out);
-    averageChangeFile << "Max. number of Gauss-Seidel iterations: " << gsNumOfIte << "\n"
+    averageChangeFile << "Max. number of Gauss-Seidel iterations: " << maxGSiter << "\n"
                       << "Pressure change limit: "   << pChangeLim << "\n"
                       << "U velocity change limit: " << uChangeLim << "\n"
                       << "V velocity change limit: " << vChangeLim << "\n"
@@ -259,8 +259,7 @@ int main()
         ///////////////////////////////////////////
         // POISSON EQUATION SOLVER
         ///////////////////////////////////////////
-        iteration = 0;  // Gauss-Seidel iteration counter
-        while (iteration <= gsNumOfIte) {   // TODO: Write this as a for loop
+        for (int iteration=0; iteration<maxGSiter;iteration++) {   // TODO: Write this as a for loop
             pOld = p; // Store the old pressure values for convergence check
             
             for (int i = 1; i < Nx - 1; i++) {
@@ -270,7 +269,7 @@ int main()
                               (h * h * 0.25 * density / timeStepSize) * (velocityStarGrad); // Update pressure using the Poisson equation
                 }
             }
-            iteration = iteration + 1;
+ 
         }
         
         ///////////////////////////////////////////
