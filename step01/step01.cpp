@@ -19,6 +19,14 @@
    and als to check steady state convergence.
   
    To compile: g++ fileName.cpp -o fileName.exe -O3 -ffast-math
+   
+   To compile with real-time plotting: 
+                1 - Uncomment lines 44,45 and REALTIME PLOTTING section in the code.
+                2 - Install matplotlibcpp library and its dependencies.
+                To compile with Python 3.12 and NumPy support:
+                        g++ fileName.cpp -o fileName.exe -O3 -ffast-math 
+                        -I C:\Python\Python312\include -I C:\Python\Python312\Lib\site-packages\numpy\core\include 
+                        -L C:\Python\Python312\libs -lpython312
 
    Authors: Ibrahim Baran Kucukcay
             Dr. Cuneyt Sert
@@ -75,7 +83,7 @@ int main()
     //////////////////////////////////////////////////
     // PROBLEM INPUTS
     //////////////////////////////////////////////////
-    double Re = 5000;
+    double Re = 100;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -113,7 +121,7 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // ITERATION NUMBERS and CONVERGENCE TOLERANCES
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    double gsNumOfIte = 1;     // Max. number of iterations for the Gauss-Seidel method
+    double gsNumOfIte = 30;     // Max. number of iterations for the Gauss-Seidel method
                                // TODO: Change its name to maxGSiter.
     double pChangeLim = 1e-6;  // Convergence tolerance for pressure
     double uChangeLim = 1e-7;  // Convergence tolerance for u velocity
@@ -336,7 +344,25 @@ int main()
 
             // Write to file (unchanged)
             averageChangeFile << std::fixed << std::setprecision(9) << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << uCenter<< endl;
+            
+            
+            ///////////////////////////////////////////
+            // REAL TIME PLOTTING
+            ///////////////////////////////////////////
+            time_plot.push_back(t);
+            velocity_plot.push_back(uCenter);
+            plt::clf();
+            plt::plot(time_plot, velocity_plot, "b-");
+            plt::xlabel("Time");
+            plt::ylabel("Center U Velocity");
+            plt::title("Real-time Center Velocity");
+            plt::grid(true);
+            plt::pause(0.001);
+
+        
         }
+
+
         
         // Check for convergence
         // If the average change in u, v and p is less than the specified tolerances, the simulation is considered converged.
@@ -345,19 +371,7 @@ int main()
             cout << "Converged at time: " << t << endl;
             break;
         }
-        time_plot.push_back(t);
-        velocity_plot.push_back(uCenter);
-        
-        // Update plot every few iterations to avoid too frequent updates
-        if (n % (periodOfOutput * 2) == 0) {  // Plot every 200 iterations
-            plt::clf();
-            plt::plot(time_plot, velocity_plot, "b-");
-            plt::xlabel("Time");
-            plt::ylabel("Center U Velocity");
-            plt::title("Real-time Center Velocity");
-            plt::grid(true);
-            plt::pause(0.001);
-        }
+
         n++;
     }
 
@@ -443,9 +457,8 @@ int main()
     averageChangeFile.close();
     vtkFile.close();
     
-    plt::ioff();  // Turn off interactive mode
-    plt::show();
-    plt::save("center_velocity_final.png");
+
+
     return 0;
 }  // End of the main function
 

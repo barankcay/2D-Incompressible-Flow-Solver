@@ -57,5 +57,6 @@
         "semaphore": "cpp",
         "stop_token": "cpp",
         "thread": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "C:/Users/barankucukcay/Desktop/2D-Incompressible-Flow-Solver/step01"
 }
