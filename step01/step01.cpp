@@ -109,12 +109,12 @@ int main()
     //////////////////////////////////////////////////
     double lengthX = 1;  // Length of the domain in the x direction (not including the ghost nodes)
     double lengthY = 1;  // Length of the domain in the y direction (not including the ghost nodes)
-    int Nx = 181;        // Number of nodes in the x direction (including ghost nodes)
+    int Nx = 182;        // Number of nodes in the x direction (including ghost nodes)
                          // Note: Specify an even value for parctical reasons.
                          // TODO: Check whether an even value is specified or not.
     if (Nx % 2 != 0) {
         cout << "Nx should be an even number. Please change it." << endl;
-        return -1; // Exit the program if Nx is not even
+        return -1; 
     }
     double h = lengthX / (Nx - 2);   // Uniform grid spacing (h = dx = dy)
     int Ny = (lengthY / h) + 2;      // +2 for ghost nodes
@@ -125,7 +125,12 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // ITERATION NUMBERS and CONVERGENCE TOLERANCES
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    double maxGSiter = 30;     // Max. number of iterations for the Gauss-Seidel method
+    double maxGSiter = 50;     // Max. number of iterations for the Gauss-Seidel method
+    double GSerror;     // Error for the Gauss-Seidel method
+    double GStolerance = 1e-6; // Tolerance for the Gauss-Seidel method
+    double gsPPEdiff; // Difference in pressure for the Gauss-Seidel method
+    int iteration; // Iteration counter for the Gauss-Seidel method
+
                                // TODO: Change its name to maxGSiter.
     double pChangeLim = 1e-6;  // Convergence tolerance for pressure
     double uChangeLim = 1e-7;  // Convergence tolerance for u velocity
@@ -176,7 +181,6 @@ int main()
     // The time step size is calculated using the minimum of the two criteria
     // Lid driven cavity provblem's lid speed (uTopWall) is used in the second criteria for the maximum reference speed.
     double timeStepSize = min(h*h / (4*dynamicViscosity), 2 * dynamicViscosity / (uTopWall*uTopWall));
-    
     
     //////////////////////////////////////////////////////////
     // ALLOCATING MEMORY FOR THE UNKNOWNS AND INITIALIZATION
@@ -255,13 +259,18 @@ int main()
         calculateGhostNodeValues(2, vStar, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
         
         
-        
         ///////////////////////////////////////////
         // POISSON EQUATION SOLVER
         ///////////////////////////////////////////
-        for (int iteration=0; iteration<maxGSiter;iteration++) {   // TODO: Write this as a for loop
-            pOld = p; // Store the old pressure values for convergence check
-            
+
+        iteration = 0; // Reset iteration counter for the Gauss-Seidel method
+        GSerror = 100; // Initialize GSerror to a large value to enter the loop
+        while (GSerror > GStolerance && iteration < maxGSiter) {
+            // store old pressures
+            pOld = p;
+
+
+            // Gauss–Seidel update
             for (int i = 1; i < Nx - 1; i++) {
                 for (int j = 1; j < Ny - 1; j++) {
                     velocityStarGrad = (uStar[i+1][j] - uStar[i][j] + vStar[i][j+1] - vStar[i][j]) / h;
@@ -269,9 +278,21 @@ int main()
                               (h * h * 0.25 * density / timeStepSize) * (velocityStarGrad); // Update pressure using the Poisson equation
                 }
             }
- 
+
+
+            // compute L2 norm of change
+            GSerror = 0.0;
+            for (int i = 1; i < Nx-1; i++) {
+                for (int j = 1; j < Ny-1; j++) {
+                    gsPPEdiff = abs(p[i][j] - pOld[i][j]);
+                    if (gsPPEdiff > GSerror) {
+                        GSerror = gsPPEdiff;
+                    }
+                }
+            }
+
+            iteration++;
         }
-        
         ///////////////////////////////////////////
         // ANCHORING THE PRESSURE FIELD
         ///////////////////////////////////////////
@@ -280,7 +301,7 @@ int main()
         // field unless this is done. 
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {
-                p[i][j] = p[i][j] - p[1][1];
+                p[i][j] = p[i][j] - p[Nx-1][Ny-1];
             }
         }
         calculateGhostNodeValues(0, p, uTopWall, uBottomWall, uLeftWall, uRightWall, vLeftWall, vRightWall, vTopWall, vBottomWall, Nx, Ny);
