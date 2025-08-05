@@ -83,7 +83,7 @@ int main()
     //////////////////////////////////////////////////
     // PROBLEM INPUTS
     //////////////////////////////////////////////////
-    double Re = 100;
+    double Re = 3200;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -125,20 +125,24 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // ITERATION NUMBERS and CONVERGENCE TOLERANCES
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    double maxGSiter = 1;     // Max. number of iterations for the Gauss-Seidel method
+    double maxGSiter = 50;     // Max. number of iterations for the Gauss-Seidel method
     double GSerror;     // Error for the Gauss-Seidel method
-    double GStolerance = 1e-4; // Tolerance for the Gauss-Seidel method
+    double GStolerance = 1e-5; // Tolerance for the Gauss-Seidel method
     double gsPPEdiff; // Difference in pressure for the Gauss-Seidel method
     int iteration; // Iteration counter for the Gauss-Seidel method
 
                                // TODO: Change its name to maxGSiter.
-    double pChangeLim = 1e-6;  // Convergence tolerance for pressure
-    double uChangeLim = 1e-7;  // Convergence tolerance for u velocity
-    double vChangeLim = 1e-7;  // Convergence tolerance for v velocity
+    double pChangeLim = 1e-4;  // Convergence tolerance for pressure
+    double uChangeLim = 1e-4;  // Convergence tolerance for u velocity
+    double vChangeLim = 1e-4;  // Convergence tolerance for v velocity
     double aveChangeU;
     double aveChangeV;
     double aveChangeP;
     double uCenter;
+
+    double errorP; // Error for pressure convergence check
+    double errorU; // Error for u velocity convergence check
+    double errorV; // Error for v velocity convergence check
     // The average change of u, v and p unknowns are calculated as the sum of the absolute differences between the
     // current and the previous values of all nodes divided by the number of nodes. When this value is less than the
     // specified tolerances, the Gauss-Seidel method (or the overall solution) is considered to be converged.    
@@ -158,7 +162,7 @@ int main()
     //////////////////////////////////////////////////
     // OUTPUT CONTROL PARAMETERS
     //////////////////////////////////////////////////
-    double periodOfOutput = 5; // Time period for outputting average change and screen output
+    double periodOfOutput = 100; // Time period for outputting average change and screen output
     fstream U_outputFile;        // Output file vertical centerline u velocity
     fstream P_outputFile;        // Output file vertical centerline pressure.
     fstream averageChangeFile;   // Output file for average changes of unknonws
@@ -265,7 +269,7 @@ int main()
 
         iteration = 0; // Reset iteration counter for the Gauss-Seidel method
         GSerror = 100; // Initialize GSerror to a large value to enter the loop
-        while ( iteration < maxGSiter) {
+        while (GSerror>GStolerance&& iteration < maxGSiter) {
             // store old pressures
             pOld = p;
 
@@ -280,7 +284,7 @@ int main()
             }
 
 
-            // compute L2 norm of change
+            // // compute L2 norm of change
             GSerror = 0.0;
             for (int i = 1; i < Nx-1; i++) {
                 for (int j = 1; j < Ny-1; j++) {
@@ -333,22 +337,31 @@ int main()
         aveChangeP = 0.0;
         for (int i = 1; i < Nx - 1; i++) {
             for (int j = 1; j < Ny - 1; j++) {
-                aveChangeP = aveChangeP + abs(p[i][j] - pPrev[i][j]);
-            }
-        }
-        for (int i = 1; i < Nx; i++) {
-            for (int j = 1; j < Ny - 1; j++) {
-                aveChangeU = aveChangeU + abs(u[i][j] - uPrev[i][j]);
+                errorP = abs(p[i][j] - pPrev[i][j])/abs(pPrev[i][j]+1e-10);
+                if (errorP > aveChangeP) {
+                    aveChangeP = errorP;
+                }
             }
         }
         for (int i = 1; i < Nx - 1; i++) {
-            for (int j = 1; j < Ny; j++) {
-                aveChangeV = aveChangeV + abs(v[i][j] - vPrev[i][j]);
+            for (int j = 1; j < Ny - 1; j++) {
+                errorU = abs(u[i][j] - uPrev[i][j])/abs(uPrev[i][j]+1e-10);
+                if (errorU > aveChangeU) {
+                    aveChangeU = errorU;
+                }
             }
-        }        
-        aveChangeU = aveChangeU / (Nx * Ny);
-        aveChangeV = aveChangeV / (Nx * Ny);
-        aveChangeP = aveChangeP / (Nx * Ny);
+        }
+        for (int i = 1; i < Nx - 1; i++) {
+            for (int j = 1; j < Ny - 1; j++) {
+                errorV = abs(v[i][j] - vPrev[i][j])/abs(vPrev[i][j]+1e-10);
+                if (errorV > aveChangeV) {
+                    aveChangeV = errorV;
+                }
+            }
+        }
+        // aveChangeU = aveChangeU / (Nx * Ny);
+        // aveChangeV = aveChangeV / (Nx * Ny);
+        // aveChangeP = aveChangeP / (Nx * Ny);
         uCenter=0.5*(u[(Nx) / 2][(Ny - 2) / 2] + u[(Nx) / 2][(Ny) / 2]);
 
         // Output the average change values and center u velocity to the console and to the average change file
@@ -378,6 +391,7 @@ int main()
             plt::title("Real-time Center Velocity");
             plt::grid(true);
             plt::pause(0.001);
+            plt::save("real_time_plot.png");
 
         
         }
