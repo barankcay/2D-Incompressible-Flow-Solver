@@ -21,7 +21,7 @@
    To compile: g++ fileName.cpp -o fileName.exe -O3 -ffast-math
    
    To compile with real-time plotting: 
-                1 - Uncomment lines 44,45 and REALTIME PLOTTING section in the code.
+                1 - Uncomment the line '#include "matplotlibcpp.h"' and REALTIME PLOTTING section in the code.
                 2 - Install matplotlibcpp library and its dependencies.
                 To compile with Python 3.12 and NumPy support:
                         g++ fileName.cpp -o fileName.exe -O3 -ffast-math 
@@ -47,14 +47,20 @@ using namespace std;
 namespace plt = matplotlibcpp;
 
 // Add these variables after your other variable declarations
-vector<double> time_plot;
-vector<double> velocity_plot;
+
 void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall,
                               double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny);
 
+void writeOutputFiles(const vector<vector<double>>& u, 
+                     const vector<vector<double>>& v,
+                     const vector<vector<double>>& p,
+                     double h, double timeStepSize, 
+                     double Re, int Nx, int Ny, int n,
+                     double elapsedTime);  // Changed to take milliseconds directly
+
 int main()
 {
-    auto start = std::chrono::steady_clock::now();
+    auto start = chrono::steady_clock::now();
 
     //////////////////////////////////////////////////
     // CREATION OF FIELD PARAMETERS
@@ -78,6 +84,8 @@ int main()
 
     double velocityStarGrad; // Gradient of (uStar, vStar) vector used in the pressure Poisson equation. du*/dx + dv*/dy
     
+    vector<double> timePlot;
+    vector<double> uCenterPlot;
 
     
     //////////////////////////////////////////////////
@@ -125,20 +133,24 @@ int main()
     /////////////////////////////////////////////////////////////////////////////////////////////////////
     // ITERATION NUMBERS and CONVERGENCE TOLERANCES
     /////////////////////////////////////////////////////////////////////////////////////////////////////
-    double maxGSiter = 1;     // Max. number of iterations for the Gauss-Seidel method
+    double maxGSiter = 50;     // Max. number of iterations for the Gauss-Seidel method
     double GSerror;     // Error for the Gauss-Seidel method
-    double GStolerance = 1e-4; // Tolerance for the Gauss-Seidel method
+    double GStolerance = 1e-5; // Tolerance for the Gauss-Seidel method
     double gsPPEdiff; // Difference in pressure for the Gauss-Seidel method
     int iteration; // Iteration counter for the Gauss-Seidel method
 
                                // TODO: Change its name to maxGSiter.
-    double pChangeLim = 1e-6;  // Convergence tolerance for pressure
-    double uChangeLim = 1e-7;  // Convergence tolerance for u velocity
-    double vChangeLim = 1e-7;  // Convergence tolerance for v velocity
-    double aveChangeU;
-    double aveChangeV;
-    double aveChangeP;
+    double pLimit = 1e-4;  // Convergence tolerance for pressure
+    double uLimit = 1e-4;  // Convergence tolerance for u velocity
+    double vLimit = 1e-4;  // Convergence tolerance for v velocity
+    double maxRelChangeU;
+    double maxRelChangeV;
+    double maxRelChangeP;
     double uCenter;
+
+    double errorP; // Error for pressure convergence check
+    double errorU; // Error for u velocity convergence check
+    double errorV; // Error for v velocity convergence check
     // The average change of u, v and p unknowns are calculated as the sum of the absolute differences between the
     // current and the previous values of all nodes divided by the number of nodes. When this value is less than the
     // specified tolerances, the Gauss-Seidel method (or the overall solution) is considered to be converged.    
@@ -153,22 +165,23 @@ int main()
     double startTime = 0;
     double endTime   = 10000;
     
+    double elapsedTime;
     
     
     //////////////////////////////////////////////////
     // OUTPUT CONTROL PARAMETERS
     //////////////////////////////////////////////////
-    double periodOfOutput = 5; // Time period for outputting average change and screen output
+    double periodOfOutput = 100; // Time period for outputting average change and screen output
     fstream U_outputFile;        // Output file vertical centerline u velocity
     fstream P_outputFile;        // Output file vertical centerline pressure.
     fstream averageChangeFile;   // Output file for average changes of unknonws
     fstream vtkFile;             // Output file in VTK format
     
-    averageChangeFile.open("01_average_change.txt", std::ios::out);
+    averageChangeFile.open("01_average_change.txt", ios::out);
     averageChangeFile << "Max. number of Gauss-Seidel iterations: " << maxGSiter << "\n"
-                      << "Pressure change limit: "   << pChangeLim << "\n"
-                      << "U velocity change limit: " << uChangeLim << "\n"
-                      << "V velocity change limit: " << vChangeLim << "\n"
+                      << "Pressure change limit: "   << pLimit << "\n"
+                      << "U velocity change limit: " << uLimit << "\n"
+                      << "V velocity change limit: " << vLimit << "\n"
                       << "# Time  U_change  V_change  P_change  uMid\n"; // Header for average change file
 
     
@@ -265,7 +278,7 @@ int main()
 
         iteration = 0; // Reset iteration counter for the Gauss-Seidel method
         GSerror = 100; // Initialize GSerror to a large value to enter the loop
-        while ( iteration < maxGSiter) {
+        while (GSerror>GStolerance&& iteration < maxGSiter) {
             // store old pressures
             pOld = p;
 
@@ -280,16 +293,17 @@ int main()
             }
 
 
-            // compute L2 norm of change
             GSerror = 0.0;
             for (int i = 1; i < Nx-1; i++) {
                 for (int j = 1; j < Ny-1; j++) {
-                    gsPPEdiff = abs(p[i][j] - pOld[i][j]);
+                    gsPPEdiff = abs(p[i][j] - pOld[i][j]); 
                     if (gsPPEdiff > GSerror) {
                         GSerror = gsPPEdiff;
                     }
                 }
             }
+
+
 
             iteration++;
         }
@@ -328,56 +342,57 @@ int main()
         // CONVERGENCE CHECK
         ///////////////////////////////////////////
         // Calculate the average change in u, v and p from the previous time step to this one
-        aveChangeU = 0.0;
-        aveChangeV = 0.0;
-        aveChangeP = 0.0;
+        maxRelChangeU = 0.0;
+        maxRelChangeV = 0.0;
+        maxRelChangeP = 0.0;
         for (int i = 1; i < Nx - 1; i++) {
             for (int j = 1; j < Ny - 1; j++) {
-                aveChangeP = aveChangeP + abs(p[i][j] - pPrev[i][j]);
+                errorP = abs(p[i][j] - pPrev[i][j])/abs(pPrev[i][j]+1e-10);
+                if (errorP > maxRelChangeP) {
+                    maxRelChangeP = errorP;
+                }
+                errorU = abs(u[i][j] - uPrev[i][j])/abs(uPrev[i][j]+1e-10);
+                if (errorU > maxRelChangeU) {
+                    maxRelChangeU = errorU;
+                }
+                errorV = abs(v[i][j] - vPrev[i][j])/abs(vPrev[i][j]+1e-10);
+                if (errorV > maxRelChangeV) {
+                    maxRelChangeV = errorV;
+                }
             }
         }
-        for (int i = 1; i < Nx; i++) {
-            for (int j = 1; j < Ny - 1; j++) {
-                aveChangeU = aveChangeU + abs(u[i][j] - uPrev[i][j]);
-            }
-        }
-        for (int i = 1; i < Nx - 1; i++) {
-            for (int j = 1; j < Ny; j++) {
-                aveChangeV = aveChangeV + abs(v[i][j] - vPrev[i][j]);
-            }
-        }        
-        aveChangeU = aveChangeU / (Nx * Ny);
-        aveChangeV = aveChangeV / (Nx * Ny);
-        aveChangeP = aveChangeP / (Nx * Ny);
+
         uCenter=0.5*(u[(Nx) / 2][(Ny - 2) / 2] + u[(Nx) / 2][(Ny) / 2]);
 
         // Output the average change values and center u velocity to the console and to the average change file
         if (remainder(n, periodOfOutput) == 0) {
-            cout << "Time: " << std::fixed << t;
+            cout << "Time: " << fixed << t;
 
-            cout << std::scientific << "  Uchange: "     << aveChangeU
-                                    << "  Vchange: "     << aveChangeV
-                                    << "  PressChange: " << aveChangeP;
+            cout << scientific << "  Uchange: "     << maxRelChangeU
+                                    << "  Vchange: "     << maxRelChangeV
+                                    << "  PressChange: " << maxRelChangeP
+                                    <<"   GSiter: " << iteration;
 
             // Print Center U velocity in normal (default) notation
-            cout << std::fixed << "  Center U velocity: " << uCenter << endl;
+            cout << fixed << "  Center U velocity: " << uCenter << endl;
 
             // Write to file (unchanged)
-            averageChangeFile << std::fixed << std::setprecision(9) << t << " " << aveChangeU << " " << aveChangeV << " " << aveChangeP << " " << uCenter<< endl;
+            averageChangeFile << fixed << setprecision(9) << t << " " << maxRelChangeU << " " << maxRelChangeV << " " << maxRelChangeP << " " << uCenter<< endl;
             
             
             ///////////////////////////////////////////
             // REAL TIME PLOTTING
             ///////////////////////////////////////////
-            time_plot.push_back(t);
-            velocity_plot.push_back(uCenter);
+            timePlot.push_back(t);
+            uCenterPlot.push_back(uCenter);
             plt::clf();
-            plt::plot(time_plot, velocity_plot, "b-");
+            plt::plot(timePlot, uCenterPlot, "b-");
             plt::xlabel("Time");
             plt::ylabel("Center U Velocity");
             plt::title("Real-time Center Velocity");
             plt::grid(true);
             plt::pause(0.001);
+            plt::save("real_timePlot.png");
 
         
         }
@@ -387,98 +402,25 @@ int main()
         // Check for convergence
         // If the average change in u, v and p is less than the specified tolerances, the simulation is considered converged.
         // If the simulation is converged, break the loop and output the final time step size.
-        if (aveChangeU < uChangeLim && aveChangeV < vChangeLim && aveChangeP < pChangeLim) {
+        if (maxRelChangeU < uLimit && maxRelChangeV < vLimit && maxRelChangeP < pLimit) {
             cout << "Converged at time: " << t << endl;
             break;
         }
 
         n++;
     }
-
+    averageChangeFile.close();
     cout << timeStepSize << endl;
 
-    std::cout << "\nEnd of the main function is reached. Stopping.\n\n";
-    auto end = std::chrono::steady_clock::now();
-    std::cout << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms." << std::endl;
-    
+    cout << "\nEnd of the main function is reached. Stopping.\n\n";
+    auto end = chrono::steady_clock::now();
+    elapsedTime = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+    cout << "Elapsed time : " << elapsedTime << " ms." << endl;
+    writeOutputFiles(u, v, p, h, timeStepSize, Re, Nx, Ny, n, elapsedTime);
     
     
     // TODO: Move all the following file writing code to a new function.
-    
-    ////////////////////////////////////////////////////////////////
-    // WRITE X VELOCITY ON THE VERTICAL CENTERLINE TO A FILE
-    ////////////////////////////////////////////////////////////////
-    U_outputFile.open("02_U_output.txt", std::ios::out);
-    U_outputFile << "nx     = " << Nx << "\n";
-    U_outputFile << "ny     = " << Ny << "\n";
-    U_outputFile << "dt     = " << timeStepSize << "\n";
-    U_outputFile << "Re     = " << Re << "\n";
-    U_outputFile << "n      = " << n << "\n";
-    U_outputFile << "t      = " << n * timeStepSize << "\n";
-    U_outputFile << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
-    U_outputFile << "y            u \n";
-    for (int j = Ny-2; j >= 1; j--) {
-        U_outputFile << std::fixed << std::setprecision(7) << (j - 1) * h + h / 2 << "    "
-                     << std::fixed << std::setprecision(7) << u[Nx / 2][j] << "\n";
-    }
-
-    
-    
-    ////////////////////////////////////////////////////////////////
-    // WRITE PRESSURE ON THE VERTICAL CENTERLINE TO A FILE
-    ////////////////////////////////////////////////////////////////
-    // This is the average of the pressure at the nodes on the left and the right of the vertical
-    // centerline because there is no pressure node directly at the center vertical line
-
-    P_outputFile.open("03_P_output.txt", std::ios::out);
-    P_outputFile << "# nx = " << Nx -2 << "\n";
-    P_outputFile << "# ny = " << Ny -2 << "\n";
-    P_outputFile << "# dt = " << timeStepSize << "\n";
-    P_outputFile << "# Re = " << Re << "\n";
-    P_outputFile << "# n = " << n << "\n";
-    P_outputFile << "# t = " << n * timeStepSize << "\n";
-    P_outputFile << "Elapsed time : " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms.\n";
-    P_outputFile << "y            p \n";
-    for (int j = Ny-2; j >= 1; j--) {
-        P_outputFile << std::fixed << std::setprecision(7) << (j - 1) * h + h / 2 << "    "
-                     << std::fixed << std::setprecision(7) << 0.5 * (p[(Nx / 2) - 1][j] + p[(Nx / 2)][j]) << "\n";
-    }
-
-
-    ////////////////////////////////////////////////////////////////
-    // WRITE THE CURRENT SOLUTION AS A VTK FILE FOR VISUALIZATION
-    ////////////////////////////////////////////////////////////////
-    vtkFile.open("04_velocityField.txt", std::ios::out);
-    vtkFile << "# vtk DataFile Version 2.0\n";
-    vtkFile << "Lid Driven Cavity Flow\n";
-    vtkFile << "ASCII\n";
-    vtkFile << "DATASET STRUCTURED_GRID\n";
-    vtkFile << "DIMENSIONS " << Nx-1 << " " << Ny-1 << " 1\n";
-    vtkFile << "POINTS " << (Nx-1) * (Ny-1) << " float\n";
-    for (int j = 0; j < Ny - 1; j++) {
-        for (int i = 0; i < Nx - 1; i++) {
-            vtkFile << std::fixed << std::setprecision(7) << i * h << " "
-                    << std::fixed << std::setprecision(7) << j * h << " "
-                    << "0.0\n";
-        }
-    }
-    vtkFile << "POINT_DATA " << (Nx-1) * (Ny-1) << "\n";
-    vtkFile << "VECTORS velocity float\n";
-    for (int j = 0; j < Ny - 1; j++) {
-        for (int i = 0; i < Nx - 1; i++) {
-            vtkFile << std::fixed << std::setprecision(7) << 0.5*(u[i+1][j+1]+u[i+1][j]) << " "
-                    << std::fixed << std::setprecision(7) << 0.5*(v[i][j+1]+v[i+1][j+1]) << " "
-                    << "0.0\n";
-        }
-    }
-
-    U_outputFile.close();
-    P_outputFile.close();
-    averageChangeFile.close();
-    vtkFile.close();
-    
-
-
+   
     return 0;
 }  // End of the main function
 
@@ -543,3 +485,77 @@ void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall,
         M[Nx-1][Ny] = 0.5 * (M[Nx-2][Ny] + M[Nx - 1][Ny-1]);  // Bottom right corner
     }
 }  // End of function calculateGhostNodeValues
+void writeOutputFiles(const vector<vector<double>>& u, 
+                     const vector<vector<double>>& v,
+                     const vector<vector<double>>& p,
+                     double h, double timeStepSize, 
+                     double Re, int Nx, int Ny, int n,
+                     double elapsedTime)  // Changed to take milliseconds directly
+{
+    ////////////////////////////////////////////////////////////////
+    // WRITE X VELOCITY ON THE VERTICAL CENTERLINE TO A FILE
+    ////////////////////////////////////////////////////////////////
+    ofstream U_outputFile("02_U_output.txt");
+    U_outputFile << "nx     = " << Nx << "\n";
+    U_outputFile << "ny     = " << Ny << "\n";
+    U_outputFile << "dt     = " << timeStepSize << "\n";
+    U_outputFile << "Re     = " << Re << "\n";
+    U_outputFile << "n      = " << n << "\n";
+    U_outputFile << "t      = " << n * timeStepSize << "\n";
+    U_outputFile << "Elapsed time: " << elapsedTime << " ms.\n";
+    U_outputFile << "y            u \n";
+    for (int j = Ny-2; j >= 1; j--) {
+        U_outputFile << fixed << setprecision(7) << (j - 1) * h + h / 2 << "    "
+                     << fixed << setprecision(7) << u[Nx / 2][j] << "\n";
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // WRITE PRESSURE ON THE VERTICAL CENTERLINE TO A FILE
+    ////////////////////////////////////////////////////////////////
+    // This is the average of the pressure at the nodes on the left and the right of the vertical
+    // centerline because there is no pressure node directly at the center vertical line
+    ofstream P_outputFile("03_P_output.txt");
+    P_outputFile << "# nx = " << Nx-2 << "\n";
+    P_outputFile << "# ny = " << Ny-2 << "\n";
+    P_outputFile << "# dt = " << timeStepSize << "\n";
+    P_outputFile << "# Re = " << Re << "\n";
+    P_outputFile << "# n = " << n << "\n";
+    P_outputFile << "# t = " << n * timeStepSize << "\n";
+    P_outputFile << "Elapsed time: " << elapsedTime << " ms.\n";
+    P_outputFile << "y            p \n";
+    for (int j = Ny-2; j >= 1; j--) {
+        P_outputFile << fixed << setprecision(7) << (j - 1) * h + h / 2 << "    "
+                     << fixed << setprecision(7) << 0.5 * (p[(Nx / 2) - 1][j] + p[(Nx / 2)][j]) << "\n";
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // WRITE THE CURRENT SOLUTION AS A VTK FILE FOR VISUALIZATION
+    ////////////////////////////////////////////////////////////////
+    ofstream vtkFile("04_velocityField.txt");
+    vtkFile << "# vtk DataFile Version 2.0\n";
+    vtkFile << "Lid Driven Cavity Flow\n";
+    vtkFile << "ASCII\n";
+    vtkFile << "DATASET STRUCTURED_GRID\n";
+    vtkFile << "DIMENSIONS " << Nx-1 << " " << Ny-1 << " 1\n";
+    vtkFile << "POINTS " << (Nx-1) * (Ny-1) << " float\n";
+    for (int j = 0; j < Ny - 1; j++) {
+        for (int i = 0; i < Nx - 1; i++) {
+            vtkFile << fixed << setprecision(7) << i * h << " "
+                    << fixed << setprecision(7) << j * h << " "
+                    << "0.0\n";
+        }
+    }
+    vtkFile << "POINT_DATA " << (Nx-1) * (Ny-1) << "\n";
+    vtkFile << "VECTORS velocity float\n";
+    for (int j = 0; j < Ny - 1; j++) {
+        for (int i = 0; i < Nx - 1; i++) {
+            vtkFile << fixed << setprecision(7) << 0.5*(u[i+1][j+1]+u[i+1][j]) << " "
+                    << fixed << setprecision(7) << 0.5*(v[i][j+1]+v[i+1][j+1]) << " "
+                    << "0.0\n";
+        }
+    }
+    U_outputFile.close();
+    P_outputFile.close();
+
+    vtkFile.close();
+}
