@@ -91,7 +91,7 @@ int main()
     //////////////////////////////////////////////////
     // PROBLEM INPUTS
     //////////////////////////////////////////////////
-    double Re = 100;
+    double Re = 400;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -345,16 +345,24 @@ int main()
         maxRelChangeU = 0.0;
         maxRelChangeV = 0.0;
         maxRelChangeP = 0.0;
-        for (int i = 1; i < Nx - 1; i++) {
-            for (int j = 1; j < Ny - 1; j++) {
+        for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny; j++) {
                 errorP = abs(p[i][j] - pPrev[i][j])/abs(pPrev[i][j]+1e-10);
                 if (errorP > maxRelChangeP) {
                     maxRelChangeP = errorP;
                 }
+            }
+        }
+        for (int i = 0; i < Nx+1; i++) {
+            for (int j = 0; j < Ny; j++) {        
                 errorU = abs(u[i][j] - uPrev[i][j])/abs(uPrev[i][j]+1e-10);
                 if (errorU > maxRelChangeU) {
                     maxRelChangeU = errorU;
                 }
+            }
+        }
+        for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny+1; j++) {        
                 errorV = abs(v[i][j] - vPrev[i][j])/abs(vPrev[i][j]+1e-10);
                 if (errorV > maxRelChangeV) {
                     maxRelChangeV = errorV;

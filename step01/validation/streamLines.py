@@ -83,5 +83,5 @@ for i, vtk_file in enumerate(vtk_files):
 
 # Save and show results
 plt.tight_layout()
-plt.savefig('streamline_comparison.svg', bbox_inches='tight', dpi=300)
+plt.savefig('streamline_comparison.png', bbox_inches='tight', dpi=300)
 plt.show()

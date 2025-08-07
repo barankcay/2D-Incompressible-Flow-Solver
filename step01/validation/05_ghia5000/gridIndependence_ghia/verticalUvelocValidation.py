@@ -45,4 +45,4 @@ for i in range(len(U)):
     plt.ylabel('y')
     plt.legend()
 
-plt.savefig("5000Re_meshIndependenceStudy.svg")
+plt.savefig("5000Re_meshIndependenceStudy.png")

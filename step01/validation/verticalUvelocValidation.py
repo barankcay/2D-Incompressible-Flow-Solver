@@ -51,19 +51,20 @@ for i in range(num_plots):
     ax = axes[i]
     ax.plot(ghiaU, ghiaY, "o", label="Ghia [8]", color="green",markersize='11')
     ax.plot(u, y, "-", linewidth=2.0, label="Current Study", color="blue")
-    ax.set_title(headline[i], fontsize='20')
+    ax.set_title(headline[i], fontsize='25')
     
 
     ax.legend()
-    ax.set_xlabel('u', fontsize='20')
-    ax.set_ylabel('y', fontsize='20')
+    ax.set_xlabel('u', fontsize='25')
+    ax.set_ylabel('y', fontsize='25')
     ax.grid(True)
     
     # Make axis tick labels bigger
-    ax.legend(fontsize=15)
+    ax.legend(fontsize=20)
 
     ax.tick_params(axis='both', which='major', labelsize=24)  # you can adjust size
-    plt.savefig("step01ghiaValidation.svg")
+    plt.savefig("step01ghiaValidation.svg", bbox_inches='tight', pad_inches=0.3)
+
 
     
     
