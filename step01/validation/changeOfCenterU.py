@@ -44,16 +44,16 @@ for i in range(num_plots):
     ax.set_title(headline[i], fontsize='25')
     
 
-    ax.legend()
+    # ax.legend()
     ax.set_xlabel('Time', fontsize='25')
     ax.set_ylabel('u', fontsize='25')
     ax.grid(True)
     
     # Make axis tick labels bigger
-    ax.legend(fontsize=20)
+    # ax.legend(fontsize=20)
 
     ax.tick_params(axis='both', which='major', labelsize=24)  # you can adjust size
-    plt.savefig("step01midVelocChange.png", bbox_inches='tight', pad_inches=0.3)
+    plt.savefig("step01midVelocChange.svg", bbox_inches='tight', pad_inches=0.3)
 
     
     

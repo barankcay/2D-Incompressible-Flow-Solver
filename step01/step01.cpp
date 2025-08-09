@@ -91,7 +91,7 @@ int main()
     //////////////////////////////////////////////////
     // PROBLEM INPUTS
     //////////////////////////////////////////////////
-    double Re = 400;
+    double Re = 3200;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -117,7 +117,7 @@ int main()
     //////////////////////////////////////////////////
     double lengthX = 1;  // Length of the domain in the x direction (not including the ghost nodes)
     double lengthY = 1;  // Length of the domain in the y direction (not including the ghost nodes)
-    int Nx = 182;        // Number of nodes in the x direction (including ghost nodes)
+    int Nx = 62;        // Number of nodes in the x direction (including ghost nodes)
                          // Note: Specify an even value for parctical reasons.
                          // TODO: Check whether an even value is specified or not.
     if (Nx % 2 != 0) {
