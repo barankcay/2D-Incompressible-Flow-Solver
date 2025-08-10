@@ -15,8 +15,8 @@
    The spatial discretization is done using second-order central differencing.
    The Poisson equation for pressure is solved using the Gauss-Seidel method.
 
-   Average changes of u, v and p unknowns are calculated to check for Gauss-Seidel's convergence,
-   and als to check steady state convergence.
+   The relative changes of u, v and p unknowns are calculated to check for convergence of the overall solution.
+   The absolute change of pressure is calculated to check for Gauss-Seidel convergence.
   
    To compile: g++ fileName.cpp -o fileName.exe -O3 -ffast-math
    
@@ -91,7 +91,7 @@ int main()
     //////////////////////////////////////////////////
     // PROBLEM INPUTS
     //////////////////////////////////////////////////
-    double Re = 3200;
+    double Re = 100;
     double density = 1.0;
     double kinematicViscosity = 1.0 / Re;
     double dynamicViscosity = kinematicViscosity * density;
@@ -117,13 +117,14 @@ int main()
     //////////////////////////////////////////////////
     double lengthX = 1;  // Length of the domain in the x direction (not including the ghost nodes)
     double lengthY = 1;  // Length of the domain in the y direction (not including the ghost nodes)
-    int Nx = 62;        // Number of nodes in the x direction (including ghost nodes)
+    int Nx = 182;        // Number of nodes in the x direction (including ghost nodes)
                          // Note: Specify an even value for parctical reasons.
                          // TODO: Check whether an even value is specified or not.
     if (Nx % 2 != 0) {
-        cout << "Nx should be an even number. Please change it." << endl;
+        cout << "Nx should be an even number." << endl;
         return -1; 
     }
+
     double h = lengthX / (Nx - 2);   // Uniform grid spacing (h = dx = dy)
     int Ny = (lengthY / h) + 2;      // +2 for ghost nodes
     // Note: If the domain is square, Nx and Ny will be equal
@@ -139,7 +140,7 @@ int main()
     double gsPPEdiff; // Difference in pressure for the Gauss-Seidel method
     int iteration; // Iteration counter for the Gauss-Seidel method
 
-                               // TODO: Change its name to maxGSiter.
+                               
     double pLimit = 1e-4;  // Convergence tolerance for pressure
     double uLimit = 1e-4;  // Convergence tolerance for u velocity
     double vLimit = 1e-4;  // Convergence tolerance for v velocity
@@ -151,8 +152,9 @@ int main()
     double errorP; // Error for pressure convergence check
     double errorU; // Error for u velocity convergence check
     double errorV; // Error for v velocity convergence check
-    // The average change of u, v and p unknowns are calculated as the sum of the absolute differences between the
-    // current and the previous values of all nodes divided by the number of nodes. When this value is less than the
+    // The relative change of u, v and p unknowns are calculated as the absolute differences between the
+    // current and the previous values divided by the previous values. This relative change is calculated for all nodes separately.
+    // When the maximum relative change value is less than the
     // specified tolerances, the Gauss-Seidel method (or the overall solution) is considered to be converged.    
     
     
@@ -164,26 +166,34 @@ int main()
     // a convergence criteria. It can be changed to a specific time if needed.
     double startTime = 0;
     double endTime   = 10000;
-    
     double elapsedTime;
     
     
     //////////////////////////////////////////////////
     // OUTPUT CONTROL PARAMETERS
     //////////////////////////////////////////////////
-    double periodOfOutput = 100; // Time period for outputting average change and screen output
-    fstream U_outputFile;        // Output file vertical centerline u velocity
-    fstream P_outputFile;        // Output file vertical centerline pressure.
-    fstream averageChangeFile;   // Output file for average changes of unknonws
-    fstream vtkFile;             // Output file in VTK format
+    double periodOfOutput = 100;        // Time period for outputting maximum relative changes, center u velocity and screen output
+    fstream verticalUfile;              // Output file vertical centerline u velocity
+    fstream verticalPressureFile;        // Output file vertical centerline pressure.
+    fstream relativeChangeFile;         // Output file for maximum relative changes of unknonws
+    fstream vtkFile;                    // Output file in VTK format
+    fstream centerUfile;                // Output file for center u velocity
     
-    averageChangeFile.open("01_average_change.txt", ios::out);
-    averageChangeFile << "Max. number of Gauss-Seidel iterations: " << maxGSiter << "\n"
+    relativeChangeFile.open("01_relativeChange.txt", ios::out);
+    relativeChangeFile << "Max. number of Gauss-Seidel iterations: " << maxGSiter << "\n"
+                      << "Gauss-Seidel tolerance: " << GStolerance << "\n"
                       << "Pressure change limit: "   << pLimit << "\n"
                       << "U velocity change limit: " << uLimit << "\n"
                       << "V velocity change limit: " << vLimit << "\n"
-                      << "# Time  U_change  V_change  P_change  uMid\n"; // Header for average change file
+                      << "# Time  U_change  V_change  P_change \n"; // Header for relative change file
 
+    centerUfile.open("05_centerUchange.txt", ios::out);
+    centerUfile << "Max. number of Gauss-Seidel iterations: " << maxGSiter << "\n"
+                      << "Gauss-Seidel tolerance: " << GStolerance << "\n"
+                      << "Pressure change limit: "   << pLimit << "\n"
+                      << "U velocity change limit: " << uLimit << "\n"
+                      << "V velocity change limit: " << vLimit << "\n"
+                      << "# Time uMid\n"; // Header for center u velocity change file
     
 
     //////////////////////////////////////////////////////////
@@ -341,7 +351,7 @@ int main()
         ///////////////////////////////////////////
         // CONVERGENCE CHECK
         ///////////////////////////////////////////
-        // Calculate the average change in u, v and p from the previous time step to this one
+        // Calculate the maximum relative change in u, v and p from the previous time step to current one
         maxRelChangeU = 0.0;
         maxRelChangeV = 0.0;
         maxRelChangeP = 0.0;
@@ -372,7 +382,8 @@ int main()
 
         uCenter=0.5*(u[(Nx) / 2][(Ny - 2) / 2] + u[(Nx) / 2][(Ny) / 2]);
 
-        // Output the average change values and center u velocity to the console and to the average change file
+        // Output the maximum relative change values ato the console and to the relative change file
+        // Output the center u velocity to the console and to the center u velocity file
         if (remainder(n, periodOfOutput) == 0) {
             cout << "Time: " << fixed << t;
 
@@ -385,8 +396,8 @@ int main()
             cout << fixed << "  Center U velocity: " << uCenter << endl;
 
             // Write to file (unchanged)
-            averageChangeFile << fixed << setprecision(9) << t << " " << maxRelChangeU << " " << maxRelChangeV << " " << maxRelChangeP << " " << uCenter<< endl;
-            
+            relativeChangeFile << fixed << setprecision(9) << t << " " << maxRelChangeU << " " << maxRelChangeV << " " << maxRelChangeP << " " << uCenter<< endl;
+            centerUfile << fixed << setprecision(9) << t << " " << uCenter << endl;
             
             ///////////////////////////////////////////
             // REAL TIME PLOTTING
@@ -408,8 +419,8 @@ int main()
 
         
         // Check for convergence
-        // If the average change in u, v and p is less than the specified tolerances, the simulation is considered converged.
-        // If the simulation is converged, break the loop and output the final time step size.
+        // If the maximum relative change in u, v and p is less than the specified tolerances, the simulation is considered converged.
+        // If the simulation is converged, break the loop and output the final time.
         if (maxRelChangeU < uLimit && maxRelChangeV < vLimit && maxRelChangeP < pLimit) {
             cout << "Converged at time: " << t << endl;
             break;
@@ -417,7 +428,8 @@ int main()
 
         n++;
     }
-    averageChangeFile.close();
+    relativeChangeFile.close();
+    centerUfile.close();
     cout << timeStepSize << endl;
 
     cout << "\nEnd of the main function is reached. Stopping.\n\n";
@@ -503,17 +515,17 @@ void writeOutputFiles(const vector<vector<double>>& u,
     ////////////////////////////////////////////////////////////////
     // WRITE X VELOCITY ON THE VERTICAL CENTERLINE TO A FILE
     ////////////////////////////////////////////////////////////////
-    ofstream U_outputFile("02_U_output.txt");
-    U_outputFile << "nx     = " << Nx << "\n";
-    U_outputFile << "ny     = " << Ny << "\n";
-    U_outputFile << "dt     = " << timeStepSize << "\n";
-    U_outputFile << "Re     = " << Re << "\n";
-    U_outputFile << "n      = " << n << "\n";
-    U_outputFile << "t      = " << n * timeStepSize << "\n";
-    U_outputFile << "Elapsed time: " << elapsedTime << " ms.\n";
-    U_outputFile << "y            u \n";
+    ofstream verticalUfile("02_verticalUvelocity.txt");
+    verticalUfile << "nx     = " << Nx << "\n";
+    verticalUfile << "ny     = " << Ny << "\n";
+    verticalUfile << "dt     = " << timeStepSize << "\n";
+    verticalUfile << "Re     = " << Re << "\n";
+    verticalUfile << "n      = " << n << "\n";
+    verticalUfile << "t      = " << n * timeStepSize << "\n";
+    verticalUfile << "Elapsed time: " << elapsedTime << " ms.\n";
+    verticalUfile << "y            u \n";
     for (int j = Ny-2; j >= 1; j--) {
-        U_outputFile << fixed << setprecision(7) << (j - 1) * h + h / 2 << "    "
+        verticalUfile << fixed << setprecision(7) << (j - 1) * h + h / 2 << "    "
                      << fixed << setprecision(7) << u[Nx / 2][j] << "\n";
     }
 
@@ -522,24 +534,24 @@ void writeOutputFiles(const vector<vector<double>>& u,
     ////////////////////////////////////////////////////////////////
     // This is the average of the pressure at the nodes on the left and the right of the vertical
     // centerline because there is no pressure node directly at the center vertical line
-    ofstream P_outputFile("03_P_output.txt");
-    P_outputFile << "# nx = " << Nx-2 << "\n";
-    P_outputFile << "# ny = " << Ny-2 << "\n";
-    P_outputFile << "# dt = " << timeStepSize << "\n";
-    P_outputFile << "# Re = " << Re << "\n";
-    P_outputFile << "# n = " << n << "\n";
-    P_outputFile << "# t = " << n * timeStepSize << "\n";
-    P_outputFile << "Elapsed time: " << elapsedTime << " ms.\n";
-    P_outputFile << "y            p \n";
+    ofstream verticalPressureFile("03_verticalPressure.txt");
+    verticalPressureFile << "# nx = " << Nx-2 << "\n";
+    verticalPressureFile << "# ny = " << Ny-2 << "\n";
+    verticalPressureFile << "# dt = " << timeStepSize << "\n";
+    verticalPressureFile << "# Re = " << Re << "\n";
+    verticalPressureFile << "# n = " << n << "\n";
+    verticalPressureFile << "# t = " << n * timeStepSize << "\n";
+    verticalPressureFile << "Elapsed time: " << elapsedTime << " ms.\n";
+    verticalPressureFile << "y            p \n";
     for (int j = Ny-2; j >= 1; j--) {
-        P_outputFile << fixed << setprecision(7) << (j - 1) * h + h / 2 << "    "
+        verticalPressureFile << fixed << setprecision(7) << (j - 1) * h + h / 2 << "    "
                      << fixed << setprecision(7) << 0.5 * (p[(Nx / 2) - 1][j] + p[(Nx / 2)][j]) << "\n";
     }
 
     ////////////////////////////////////////////////////////////////
     // WRITE THE CURRENT SOLUTION AS A VTK FILE FOR VISUALIZATION
     ////////////////////////////////////////////////////////////////
-    ofstream vtkFile("04_velocityField.txt");
+    ofstream vtkFile("04_velocityField.vtk");
     vtkFile << "# vtk DataFile Version 2.0\n";
     vtkFile << "Lid Driven Cavity Flow\n";
     vtkFile << "ASCII\n";
@@ -562,8 +574,8 @@ void writeOutputFiles(const vector<vector<double>>& u,
                     << "0.0\n";
         }
     }
-    U_outputFile.close();
-    P_outputFile.close();
+    verticalUfile.close();
+    verticalPressureFile.close();
 
     vtkFile.close();
 }
