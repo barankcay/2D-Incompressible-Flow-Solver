@@ -1,52 +1,61 @@
-// g++ fdm_stag_uniform.cpp -o fdm_stag_uniform.exe -O3 -ffast-math
+/* This is STEP 02 of a series of incompresible Navier-Stokes solvers.
 
-// Ibrahim Baran KUCUKCAY
-//  Departmant of Mechanical Engineering, Middle East Technical University, Ankara, Turkey
+   It solves 2D, incompressible Navier-Stokes equations using the projection (fractional step) method.
+   It uses the finite volume method to simulate the lid driven cavity flow.
+   The mesh is Cartesian, uniform & staggered.
+   Horizontal velocity components (u) are placed to the left of the pressure nodes.
+   Vertical velocity components (v) are placed to the left of the pressure nodes.
+   
+   Boundary conditions are implemented using ghost nodes.
+   The left, right and bottom boundaries are no slip walls.
+   The top boundary is a moving wall with velocity u = 1, v = 0.
+   All boundaries have zero pressure gradient.
+   
+   Time discretization is done using the first-order, explicit Euler method.
+   The spatial discretization is done using second-order central differencing.
+   The Poisson equation for pressure is solved using the Gauss-Seidel method.
+
+   The relative changes of u, v and p unknowns are calculated to check for convergence of the overall solution.
+   The absolute change of pressure is calculated to check for Gauss-Seidel convergence.
+  
+   To compile: g++ fileName.cpp -o fileName.exe -O3 -ffast-math
+   
+   To compile with real-time plotting: 
+                1 - Uncomment the line '#include "matplotlibcpp.h"' and REALTIME PLOTTING section in the code.
+                2 - Install matplotlibcpp library and its dependencies.
+                To compile with Python 3.12 and NumPy support:
+                        g++ fileName.cpp -o fileName.exe -O3 -ffast-math 
+                        -I C:\Python\Python312\include -I C:\Python\Python312\Lib\site-packages\numpy\core\include 
+                        -L C:\Python\Python312\libs -lpython312
+
+   Authors: Ibrahim Baran Kucukcay
+            Dr. Cuneyt Sert
+            Dept. of Mechanical Eng., Middle East Technical Uni., Ankara, Turkey
+*/
 
 #include <iostream>
 #include <vector>
-#include <fstream> // Include for file handling
-#include <iomanip> // Include for fixed precision formatting
+#include <fstream>  // Include for file handling
+#include <iomanip>  // Include for fixed precision formatting
 #include <cmath>
 #include <thread>
 #include <chrono>
 using namespace std;
-// Case Summary:
-//  This code is a 2D staggered grid finite volume method for simulating lid driven cavity flow.
-//  The solution method of Navier Stokes equations is fractional step or predictor corrector method.
-//  The code is based on uniform grid spacing in both x and y directions.
-//  X direction velocities, U's, are placed at the left face of the cells.
-//  Y direction velocities, V's, are placed to the bottom face of the cells.
 
-// The time discretization is done using explicit Euler method, which is first order accurate.
-// The spatial discretization is done using central difference scheme, which is second order accurate.
-// The Poisson equation for pressure is solved using Gauss-Seidel method.
+#include "matplotlibcpp.h"
+namespace plt = matplotlibcpp;
 
-// Average change of the parameters is calculated to check for Gauss-Seidel convergence and also to check for convergence of the simulation.
-// The average change limits for convergence are set for pressure, u velocity and v velocity.
+// Add these variables after your other variable declarations
 
-// The boundary conditions are implemented using ghost cells.
-// The west, east and south walls are no slip walls.
-// The north wall is a moving wall with velocity U = 1, V = 0.
-// All walls have zero pressure gradient.
+void calculateGhostNodeValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall,
+                              double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny);
 
-//!!!!!!!!!!!!!!!!!!
-// Why indexing is j,i instead of i,j?
-//  This is because matrix indexing in C++ is done in row-major order.
-//  Our 2D domain is represented as matrix with rows and columns.
-//  The first index represents the row (y direction) and the second index represents the column (x direction).
-//  To move in y direction, we change the index j. And to move in y direction for matrix, we change the first index.
-//  That makes our first index j and second index i.
-
-//-------------------------------------------------------------------------//
-
-////// This is a function to set ghost cell values based on boundary conditions
-////// int b is the flow field type:
-////// 0 - pressure, 1 - u velocity, 2 - v velocity
-////// For lid driven cavity, ALL OF THE DIRICHLET BOUNDARY CONDITIONS ARE VELOCITIES
-////// So, specific input of velocity values are required for function call
-////// Pressure boundary conditions are all Neumann, which means there is not a specific pressure value at the boundaries
-void calculateGhostCellValues(int b, vector<vector<double>> &M, double uTopWall, double uBottomWall, double uLeftWall, double uRightWall, double vLeftWall, double vRightWall, double vTopWall, double vBottomWall, int Nx, int Ny);
+void writeOutputFiles(const vector<vector<double>>& u, 
+                     const vector<vector<double>>& v,
+                     const vector<vector<double>>& p,
+                     double h, double timeStepSize, 
+                     double Re, int Nx, int Ny, int n,
+                     double elapsedTime);  // Changed to take milliseconds directly
 int main()
 {
     auto start = std::chrono::steady_clock::now();
